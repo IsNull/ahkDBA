@@ -1,10 +1,4 @@
-#Include <Base>
-#Include <DBADataBase>
-#Include <DBADataBaseSQLLite>
-#Include <DBADataBaseMySQL>
-#Include <DBADataBaseADO>
-
-class DBADataBaseFactory
+class DataBaseFactory
 {
 	static AvaiableTypes := ["SQLite", "MySQL", "ADO"]
 	
@@ -18,16 +12,16 @@ class DBADataBaseFactory
 			SQLite_Startup()
 			;//parse connection string. for now assume its a path to the requested DB
 			handle := SQLite_OpenDB(connectionString)
-			return new DBADataBaseSQLLite(handle)
+			return new DBA.DataBaseSQLLite(handle)
 			
 		} if(dbType = "MySQL") {
 			OutputDebug, Open Database of known type [%dbType%]
 			MySQL_StartUp()
 			conData := MySQL_CreateConnectionData(connectionString)
-			return new DBADataBaseMySQL(conData)
+			return new DBA.DataBaseMySQL(conData)
 		} if(dbType = "ADO") {
 			OutputDebug, Open Database of known type [%dbType%]
-			return new DBADataBaseADO(connectionString)
+			return new DBA.DataBaseADO(connectionString)
 		} else {
 			throw Exception("The given Database Type is unknown! [" . dbType "]",-1)
 		}

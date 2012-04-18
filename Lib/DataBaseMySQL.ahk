@@ -1,19 +1,9 @@
-﻿#NoEnv
-#Include <mySQL>
-#Include <DBADataBase>
-#Include <DBARecordSetMySQL>
-
-class MySQL
-{
-	__New(){
-		throw Exception("This is a static Class. Don't create Instances from it!",-1)
-	}
-}
+﻿;namespace DBA
 
 /*
 	Represents a Connection to a SQLite Database
 */
-class DBADataBaseMySQL extends DBADataBase
+class DataBaseMySQL extends DBA.DataBase
 {
 	_handleDB := 0
 	_connectionData := []
@@ -105,7 +95,7 @@ class DBADataBaseMySQL extends DBADataBase
 		if(!requestResult)
 			return false
 		
-		return new DBARecordSetMySQL(this._handleDB, requestResult)
+		return new DBA.RecordSetMySQL(this._handleDB, requestResult)
 	}
 	
 	/*
@@ -208,11 +198,11 @@ class DBADataBaseMySQL extends DBADataBase
 				fieldValue := StrGet(fieldPointer, length, "CP0")
 				datafields.Add(fieldValue)
 			}
-			myRows.Add(new DBARow(colNames, datafields))
+			myRows.Add(new DBA.Row(colNames, datafields))
 		}
 		MySQL_free_result(requestResult)
 		
-		tbl := new DBATable(myRows, colNames)
+		tbl := new DBA.Table(myRows, colNames)
 		return tbl
 	}
 		

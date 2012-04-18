@@ -1,12 +1,10 @@
-﻿#NoEnv
-#Include <DBADataBaseAbstract>
-
+﻿;namespace DBA
 
 /*
 	Represents a result set of ADO
 	http://www.w3schools.com/ado/ado_ref_recordset.asp
 */
-class DBARecordSetADO extends DBARecordSet
+class RecordSetADO extends DBA.RecordSet
 {
 	_adoRS := 0 ; ado recordset
 

@@ -1,11 +1,9 @@
-﻿#NoEnv
-#Include <SQLite_L>
-#Include <DBADataBase>
+﻿;namespace DBA
 
 /*
 	Represents a result set of an SQLite Query
 */
-class DBARecordSetSqlLite extends DBARecordSet
+class RecordSetSqlLite extends DBA.RecordSet
 {
 	_currentRow := 0 	; Row
 	_colNames := 0		; Collection<ColumnNames>
@@ -81,7 +79,7 @@ class DBARecordSetSqlLite extends DBARecordSet
 				fields[A_Index] := StrGet(strPtr, "UTF-8")
 			}
 		}
-		this._currentRow := new DBARow(this._colNames, fields)
+		this._currentRow := new DBA.Row(this._colNames, fields)
 		this.CurrentRow++
 		return true
 	}
@@ -127,7 +125,7 @@ class DBARecordSetSqlLite extends DBARecordSet
 	}
 	
 	__New(db, query){
-		if(!is(db, "DBADataBaseSQLLite")){
+		if(!is(db, DBA.DataBaseSQLLite)){
 			throw Exception("db must be a DataBaseSQLLite Object",-1)
 		}
 		this._db := db

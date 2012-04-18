@@ -1,6 +1,4 @@
-﻿#NoEnv
-#Include <Base>
-#Include <Collection>
+﻿; namespace DBA
 
 /*
 #####################################################################################
@@ -13,7 +11,7 @@
 	data := Row[index]
 	data := Row["ColumnName"]
 */
-class DBARow
+class Row
 {
 	_columns := 0
 	_fields := new Collection()
@@ -86,7 +84,7 @@ class DBARow
 /*
 	row := table[index]
 */
-class DBATable
+class Table
 {
 	Rows := new Collection()
 	Columns := new Collection()
@@ -137,7 +135,7 @@ class DBATable
 	}
 }
 
-class DBADataBase
+class DataBase
 {
 	IsValid(){
 		throw Exceptions.MustOverride()
@@ -192,7 +190,7 @@ class DBADataBase
 }
 
 
-class DBARecordSet
+class RecordSet
 {
 	_currentRow := 0 	; Row
 	
@@ -236,7 +234,7 @@ class DBARecordSet
 
 		if(!IsObjectMember(this, param) && param != "_currentRow"){
 
-			if(typeof(this._currentRow) != "DBARow")
+			if(!is(this._currentRow, DBA.Row))
 				return ""
 				
 			;// assume memberaccess are the column names/indexes

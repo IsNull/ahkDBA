@@ -1,12 +1,9 @@
-﻿#NoEnv
-#Include <mysql>
-#Include <DBADataBase>
-
+﻿;namespace DBA
 
 /*
 	Represents a result set of an MySQL Query
 */
-class DBARecordSetMySQL extends DBARecordSet
+class RecordSetMySQL extends DBA.RecordSet
 {
 	_colNames := 0		; Collection<ColumnNames>
 	_colCount := 0
@@ -85,7 +82,7 @@ class DBARecordSetMySQL extends DBARecordSet
 			fieldValue := StrGet(fieldPointer, length, "CP0")
 			datafields.Add(fieldValue)
 		}
-		this._currentRow := new DBARow(this._colNames, datafields)
+		this._currentRow := new DBA.Row(this._colNames, datafields)
 		this.CurrentRow++
 		return true
 	}

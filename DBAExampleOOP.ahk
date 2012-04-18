@@ -1,7 +1,7 @@
 ﻿#NoEnv
 #Warn, LocalSameAsGlobal, Off
 SetWorkingDir %A_ScriptDir% 
-#Include <DBADatabase>
+#Include <DBA>
 
 
 global initialSQL := "SELECT * FROM Test"
@@ -14,7 +14,7 @@ Gui, Margin, 10, 10
 
 Gui, Add, Text, x10 w100 h20 0x200 , DB Connection, 
 Gui, Add, ComboBox, x+0 ym w400 vddDatabaseConnection, %A_ScriptDir%\TEST.DB||Server=localhost;Port=3306;Database=test;Uid=root;Pwd=toor;|Provider=Microsoft.Jet.OLEDB.4.0;Data Source=C:\Users\IsNull\Downloads\babbel\pas.mdb
-Gui, Add, DropDownList, yp xp+420 w100 vddDatabaseType, % ArrayToGuiString(DBADataBaseFactory.AvaiableTypes, true)
+Gui, Add, DropDownList, yp xp+420 w100 vddDatabaseType, % ArrayToGuiString(DBA.DataBaseFactory.AvaiableTypes, true)
 Gui, Add, Button, gReConnect yp xp+140 w80, .connect
 
 Gui, Add, Text, x10 yp+35  w100 h20 0x200 vTX, SQL statement:
@@ -39,15 +39,13 @@ ReConnect:
 	databaseType := ddDatabaseType
 	connectionString := ddDatabaseConnection
 
-	currentDB := DBADataBaseFactory.OpenDataBase(databaseType, connectionString)
+	currentDB := DBA.DataBaseFactory.OpenDataBase(databaseType, connectionString)
 
 	if(IsObject(currentDB))
 	{
 		if(databaseType = "SQLite"){
 			CreateTestData(currentDB) ; SQLite only
 		}
-		
-		res := currentDB.Query(SQL)
 
 		TestInsert(currentDB)
 
@@ -74,6 +72,8 @@ Exitapp
 RunSQL:
 	GuiControlGet, SQL
 	
+
+	
 	if(IsObject(currentDB))
 	{
 		state := ""
@@ -84,7 +84,7 @@ RunSQL:
 		}
 		res := currentDB.Query(SQL)
 		
-		if(is(res, "DBATable")){
+		if(is(res, DBA.Table)){
 			SB_SetText("The Selection yielded " res.Count() " results.")
 			ShowTable("ResultsLV", res)
 		} else {
@@ -92,7 +92,7 @@ RunSQL:
 		}
 		
 		if(!IsObject(res) && !res){
-				state := "!# " db.GetLastErrorMsg() " " res
+				state := "!# " currentDB.GetLastErrorMsg() " " res
 		}
 		if(state != "")
 			SB_SetText(state)
@@ -148,7 +148,7 @@ ShowTable(listView, table){
 	
 	GuiControl, -ReDraw, %listView%
 	Gui, ListView, %listView%
-	if(!is(table, "DBATable"))
+	if(!is(table, DBA.Table))
 		throw Exception("Table Object expected!",-1)
 	
 	LV_Delete()

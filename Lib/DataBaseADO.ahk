@@ -1,14 +1,9 @@
-﻿#NoEnv
-
-#Include <ADO>
-#Include <DBADataBaseAbstract>
-#Include <DBARecordSetADO>
-
+﻿;namespace DBA
 
 /*
 	Represents a Connection to a SQLite Database
 */
-class DBADataBaseADO extends DBADataBase
+class DataBaseADO extends DBA.DataBase
 {
 	_connection := 0
 	_connectionData := ""
@@ -74,7 +69,7 @@ class DBADataBaseADO extends DBADataBase
 		Querys the DB and returns a RecordSet
 	*/
 	OpenRecordSet(sql){
-		return new DBARecordSetADO(sql, this._connection)
+		return new DBA.RecordSetADO(sql, this._connection)
 	}
 	
 	/*
@@ -135,10 +130,10 @@ class DBADataBaseADO extends DBADataBase
 					j := A_index - 1
 					datafields.add(fetchedArray[j,i])
 				}
-				myRows.Add(new DBARow(columnNames, datafields))
+				myRows.Add(new DBA.Row(columnNames, datafields))
 			}
 			
-			tbl := new DBATable(myRows, columnNames)
+			tbl := new DBA.Table(myRows, columnNames)
 		}
 		return tbl
 	}
@@ -146,11 +141,11 @@ class DBADataBaseADO extends DBADataBase
 	InsertMany(records, tableName){
 		
 		;objRecordset.Open source,actconn,cursortyp,locktyp,opt
-
+	
 		rs := ComObjCreate("ADODB.Recordset")
-		rs.Open(tableName, this._connection, ADO.CursorType.adOpenDynamic, ADO.LockType.adLockBatchOptimistic, ADO.CommandType.adCmdTable)
+		/* batch 
+		rs.Open(tableName, this._connection, ADO.CursorType.adOpenKeyset, ADO.LockType.adLockBatchOptimistic, ADO.CommandType.adCmdTable)
 
-		
 		for each, record in records
 		{
 			rs.AddNew()
@@ -160,8 +155,24 @@ class DBADataBaseADO extends DBADataBase
 				rs.Fields[column].Value := value
 			}
 		}
-		
 		rs.UpdateBatch()
+		*/
+		
+		rs.Open(tableName, this._connection, ADO.CursorType.adOpenKeyset, ADO.LockType.adLockOptimistic, ADO.CommandType.adCmdTable)
+
+		for each, record in records
+		{
+			rs.AddNew()
+			
+			for column, value in record
+			{
+				rs.Fields[column].Value := value
+			}
+			rs.Update()
+		}
+		
+		
+		
 		rs.Close()
 	}
 	

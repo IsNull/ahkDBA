@@ -1,6 +1,5 @@
-﻿#NoEnv
-#Include <SQLite_L>
-#Include <DBADataBase>
+﻿
+; namespace DBA
 
 class SQLite
 {
@@ -20,7 +19,7 @@ class SQLite
 /*
 	Represents a Connection to a SQLite Database
 */
-class DBADataBaseSQLLite extends DBADataBase
+class DataBaseSQLLite extends DBA.DataBase
 {
 	_handleDB := 0
 	
@@ -68,7 +67,7 @@ class DBADataBaseSQLLite extends DBADataBase
 		Querys the DB and returns a RecordSet
 	*/
 	OpenRecordSet(sql){
-		return new DBARecordSetSqlLite(this, SQlite_Query(this._handleDB, sql))
+		return new DBA.RecordSetSqlLite(this, SQlite_Query(this._handleDB, sql))
 	}
 	
 	/*
@@ -197,9 +196,9 @@ class DBADataBaseSQLLite extends DBADataBase
 				fields.Add(StrGet(NumGet(mytable+0, Offset), "UTF-8"))
 				Offset += 4
 			}
-			myRows.Add(new DBARow(Names, fields))
+			myRows.Add(new DBA.Row(Names, fields))
 		}
-		tbl := new DBATable(myRows, Names)
+		tbl := new DBA.Table(myRows, Names)
 		
 		; Free Results Memory
 		DllCall("SQLite3\sqlite3_free_table", "UInt", mytable, "Cdecl")   
