@@ -11,6 +11,7 @@
 	data := Row[index]
 	data := Row["ColumnName"]
 */
+
 class Row
 {
 	_columns := 0
@@ -84,6 +85,7 @@ class Row
 /*
 	row := table[index]
 */
+
 class Table
 {
 	Rows := new Collection()
@@ -137,6 +139,10 @@ class Table
 
 class DataBase
 {
+	NULL := Object()
+	TRUE := Object()
+	FALSE := Object()
+	
 	IsValid(){
 		throw Exceptions.MustOverride()
 	}
@@ -188,7 +194,6 @@ class DataBase
 		throw Exceptions.MustOverride()
 	}
 }
-
 
 class RecordSet
 {
