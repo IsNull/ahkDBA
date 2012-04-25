@@ -24,7 +24,7 @@ class DataBaseMySQL extends DBA.DataBase
 		
 		if(!connectionData.Port){
 		  dbHandle := MySQL_Connect(connectionData.Server, connectionData.Uid, connectionData.Pwd, connectionData.Database)
-		}else {
+		} else {
 		  dbHandle := MySQL_Connect(connectionData.Server, connectionData.Uid, connectionData.Pwd, connectionData.Database, connectionData.Port)
 		}
 		this._handleDB := dbHandle
@@ -119,24 +119,27 @@ class DataBaseMySQL extends DBA.DataBase
 	}
 	
 	InsertMany(records, tableName){
-		
 		sql := ""
-		
 		for each, record in records
 		{
 			insertSQL := "INSERT INTO " tableName " "
-			colstring := "("
-			valString := "VALUES ("
+			colstring := ""
+			valString := ""
 			for column, value in record
 			{
-				colstring .= column "," 
-				valString .= "'" this.EscapeString(value) "', "
+				colstring .= "," column
+				if (value == DBA.Database.NULL)
+					valString .= ", NULL"
+				else if (value == DBA.DataBase.TRUE)
+					valString .= ", TRUE"
+				else if (value == DBA.DataBase.FALSE)
+					valString .= ", FALSE"
+				else
+					valString .= ", '" this.EscapeString(value) "'"
 			}
-			colstring := SubStr(colstring,1, strlen(colstring)-1)
-			valString := SubStr(valString,1, strlen(valString)-2)
-			colstring .= ")"
-			valString .= ")"
-			insertSQL .= colstring " " valString ";"
+			colstring := "(" SubStr(colstring, 3) ")"
+			valString := "VALUES (" SubStr(valString, 3) ")"
+			insertSQL .= colstring " " valString "; "
 			sql .= insertSQL
 		}
 		
@@ -148,8 +151,6 @@ class DataBaseMySQL extends DBA.DataBase
 		records.Add(record)
 		return this.InsertMany(records, tableName)
 	}
-	
-	
 	
 	_GetTableObj(sql, maxResult = -1) {
 	
@@ -182,7 +183,7 @@ class DataBaseMySQL extends DBA.DataBase
 			colNames.Add(mysqlField.Name())
 			columnCount++
 		}
-
+		
 		rowptr := 0
 		myRows := new Collection()
 		while((rowptr := MySQL_fetch_row(requestResult)))
@@ -195,7 +196,10 @@ class DataBaseMySQL extends DBA.DataBase
 			{
 				length := GetUIntAtAddress(lengths, A_Index - 1)
 				fieldPointer := GetUIntAtAddress(rowptr, A_Index - 1)
-				fieldValue := StrGet(fieldPointer, length, "CP0")
+				if (fieldPointer != 0) ; "NULL values in the row are indicated by NULL pointers." See http://dev.mysql.com/doc/refman/5.0/en/mysql-fetch-row.html
+					fieldValue := StrGet(fieldPointer, length, "CP0")
+				else
+					fieldValue := "" ; Should use DBA.DataBase.NULL from database-types branch?
 				datafields.Add(fieldValue)
 			}
 			myRows.Add(new DBA.Row(colNames, datafields))
@@ -205,5 +209,4 @@ class DataBaseMySQL extends DBA.DataBase
 		tbl := new DBA.Table(myRows, colNames)
 		return tbl
 	}
-		
 }
