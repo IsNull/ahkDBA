@@ -183,7 +183,7 @@ class DataBaseMySQL extends DBA.DataBase
 			colNames.Add(mysqlField.Name())
 			columnCount++
 		}
-
+		
 		rowptr := 0
 		myRows := new Collection()
 		while((rowptr := MySQL_fetch_row(requestResult)))
@@ -196,7 +196,10 @@ class DataBaseMySQL extends DBA.DataBase
 			{
 				length := GetUIntAtAddress(lengths, A_Index - 1)
 				fieldPointer := GetUIntAtAddress(rowptr, A_Index - 1)
-				fieldValue := StrGet(fieldPointer, length, "CP0")
+				if (fieldPointer != 0) ; "NULL values in the row are indicated by NULL pointers." See http://dev.mysql.com/doc/refman/5.0/en/mysql-fetch-row.html
+					fieldValue := StrGet(fieldPointer, length, "CP0")
+				else
+					fieldValue := "" ; Should use DBA.DataBase.NULL from database-types branch?
 				datafields.Add(fieldValue)
 			}
 			myRows.Add(new DBA.Row(colNames, datafields))
