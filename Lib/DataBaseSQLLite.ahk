@@ -94,6 +94,10 @@ class DataBaseSQLLite extends DBA.DataBase
 		this.Query("COMMIT TRANSACTION;")
 	}
 	
+	Rollback(){
+		this.Query("ROLLBACK TRANSACTION;")
+	}
+	
 	__New(handleDB){
 		this._handleDB := handleDB
 	}

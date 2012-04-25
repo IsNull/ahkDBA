@@ -105,6 +105,10 @@ class DataBaseADO extends DBA.DataBase
 		this._connection.CommitTrans()
 	}
 	
+	Rollback(){
+	  if(this.IsValid())
+		this._connection.RollbackTrans()
+	}
 	
 	FetchADORecordSet(adoRS){
 		tbl := null

@@ -118,6 +118,10 @@ class DataBaseMySQL extends DBA.DataBase
 		this.Query("COMMIT;")
 	}
 	
+	Rollback(){
+		this.Query("ROLLBACK;") 
+	}
+	
 	InsertMany(records, tableName){
 		sql := ""
 		for each, record in records

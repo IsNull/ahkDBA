@@ -182,6 +182,10 @@ class DataBase
 		throw Exceptions.MustOverride()
 	}
 	
+	Rollback(){
+		throw Exceptions.MustOverride()
+	}
+	
 	Insert(record, tableName){
 		throw Exceptions.MustOverride()
 	}
