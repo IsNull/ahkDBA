@@ -32,3 +32,5 @@ _ReSharper*/
 *.opensdf
 #Ignore backup files
 *.bak
+*.zip
+*.DB
