@@ -139,9 +139,9 @@ class Table
 
 class DataBase
 {
-	NULL := Object()
-	TRUE := Object()
-	FALSE := Object()
+	static NULL := Object()
+	static TRUE := Object()
+	static FALSE := Object()
 	
 	IsValid(){
 		throw Exceptions.MustOverride()
