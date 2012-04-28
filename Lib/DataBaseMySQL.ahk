@@ -109,6 +109,12 @@ class DataBaseMySQL extends DBA.DataBase
 		return Mysql_escape_string(str)
 	}
 	
+	QuoteIdentifier(identifier) {
+		; ` characters are actually valid. Technically everthing but a literal null U+0000.
+		; Everything else is fair game: http://dev.mysql.com/doc/refman/5.0/en/identifiers.html
+		StringReplace, identifier, identifier, ``, ````, All
+		return "``" identifier "``"
+	}
 	
 	BeginTransaction(){
 		this.Query("START TRANSACTION;")
@@ -126,12 +132,12 @@ class DataBaseMySQL extends DBA.DataBase
 		sql := ""
 		for each, record in records
 		{
-			insertSQL := "INSERT INTO " tableName " "
+			insertSQL := "INSERT INTO " this.QuoteIdentifier(tableName) " "
 			colstring := ""
 			valString := ""
 			for column, value in record
 			{
-				colstring .= "," column
+				colstring .= "," this.QuoteIdentifier(column)
 				if (value == DBA.Database.NULL)
 					valString .= ", NULL"
 				else if (value == DBA.DataBase.TRUE)
@@ -154,6 +160,26 @@ class DataBaseMySQL extends DBA.DataBase
 		records := new Collection()
 		records.Add(record)
 		return this.InsertMany(records, tableName)
+	}
+	
+	Update(fields, constraints, tableName, safe = True) {
+		if (safe) ;limitation: information_schema doesn't work with temp tables
+			for row in this.Query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE COLUMN_KEY = 'PRI' AND TABLE_NAME = '" this.EscapeString(tableName) "'").Rows
+				if (!constraints.HasKey(row[1]))
+					return -1 ; error handling....
+		
+		WHERE := ""
+		for col, val in constraints
+			WHERE .= ", " this.QuoteIdentifier(col) " = " EscapeString(val)
+		WHERE := SubStr(WHERE, 3)
+		
+		SET := ""
+		for col, val in fields
+			SET .= ", " this.QuoteIdentifier(col) " = " EscapeString(val)
+		SET := SubStr(SET, 3)
+		
+		query := "UPDATE " this.QuoteIdentifier(tableName) " SET " SET " WHERE " WHERE
+		return db.Query(query)
 	}
 	
 	_GetTableObj(sql, maxResult = -1) {

@@ -173,6 +173,9 @@ class DataBase
 		throw Exceptions.MustOverride()
 	}
 	
+	QuoteIdentifier(identifier){
+		throw Exceptions.MustOverride()
+	}
 	
 	BeginTransaction(){
 		throw Exceptions.MustOverride()
@@ -192,6 +195,10 @@ class DataBase
 	
 	InsertMany(records, tableName){
 		throw Exceptions.MustOverride()
+	}
+	
+	Update(fields, constraints, tableName, safe = True){
+		throw Exception.MustOverride()
 	}
 	
 	Close(){
