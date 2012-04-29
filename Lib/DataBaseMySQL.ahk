@@ -164,7 +164,7 @@ class DataBaseMySQL extends DBA.DataBase
 	
 	Update(fields, constraints, tableName, safe = True) {
 		if (safe) ;limitation: information_schema doesn't work with temp tables
-			for row in this.Query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE COLUMN_KEY = 'PRI' AND TABLE_NAME = '" this.EscapeString(tableName) "'").Rows
+			for k, row in this.Query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE COLUMN_KEY = 'PRI' AND TABLE_NAME = '" this.EscapeString(tableName) "'").Rows
 				if (!constraints.HasKey(row[1]))
 					return -1 ; error handling....
 		
