@@ -170,12 +170,12 @@ class DataBaseMySQL extends DBA.DataBase
 		
 		WHERE := ""
 		for col, val in constraints
-			WHERE .= ", " this.QuoteIdentifier(col) " = " EscapeString(val)
+			WHERE .= ", " this.QuoteIdentifier(col) " = " this.EscapeString(val)
 		WHERE := SubStr(WHERE, 3)
 		
 		SET := ""
 		for col, val in fields
-			SET .= ", " this.QuoteIdentifier(col) " = " EscapeString(val)
+			SET .= ", " this.QuoteIdentifier(col) " = " this.EscapeString(val)
 		SET := SubStr(SET, 3)
 		
 		query := "UPDATE " this.QuoteIdentifier(tableName) " SET " SET " WHERE " WHERE

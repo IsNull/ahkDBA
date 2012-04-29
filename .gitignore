@@ -34,3 +34,4 @@ _ReSharper*/
 *.bak
 *.zip
 *.DB
+clean.bat
