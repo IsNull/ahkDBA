@@ -105,6 +105,18 @@ class DataBaseMySQL extends DBA.DataBase
 		return this._GetTableObj(sql)
 	}
 	
+	ToSqlLiteral(value) {
+		if (IsObject(value)) {
+			if (value == DBA.DataBase.NULL)
+				return "NULL"
+			if (value == DBA.DataBase.TRUE)
+				return "TRUE"
+			if (value == DBA.DataBase.FALSE)
+				return "FALSE"
+		}
+		return "'" this.EscapeString(value) "'"
+	}
+	
 	EscapeString(str){
 		return Mysql_escape_string(str)
 	}
@@ -137,15 +149,8 @@ class DataBaseMySQL extends DBA.DataBase
 			valString := ""
 			for column, value in record
 			{
-				colstring .= "," this.QuoteIdentifier(column)
-				if (value == DBA.Database.NULL)
-					valString .= ", NULL"
-				else if (value == DBA.DataBase.TRUE)
-					valString .= ", TRUE"
-				else if (value == DBA.DataBase.FALSE)
-					valString .= ", FALSE"
-				else
-					valString .= ", '" this.EscapeString(value) "'"
+				colstring .= ", " this.QuoteIdentifier(column)
+				valString .= ", " this.ToSqlLiteral(value)
 			}
 			colstring := "(" SubStr(colstring, 3) ")"
 			valString := "VALUES (" SubStr(valString, 3) ")"
@@ -164,18 +169,18 @@ class DataBaseMySQL extends DBA.DataBase
 	
 	Update(fields, constraints, tableName, safe = True) {
 		if (safe) ;limitation: information_schema doesn't work with temp tables
-			for k, row in this.Query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE COLUMN_KEY = 'PRI' AND TABLE_NAME = '" this.EscapeString(tableName) "'").Rows
+			for k, row in this.Query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE COLUMN_KEY = 'PRI' AND TABLE_NAME = " this.ToSqlLiteral(tableName)).Rows
 				if (!constraints.HasKey(row[1]))
 					return -1 ; error handling....
 		
 		WHERE := ""
 		for col, val in constraints
-			WHERE .= ", " this.QuoteIdentifier(col) " = " this.EscapeString(val)
+			WHERE .= ", " this.QuoteIdentifier(col) " = " this.ToSqlLiteral(val)
 		WHERE := SubStr(WHERE, 3)
 		
 		SET := ""
 		for col, val in fields
-			SET .= ", " this.QuoteIdentifier(col) " = " this.EscapeString(val)
+			SET .= ", " this.QuoteIdentifier(col) " = " this.ToSqlLiteral(val)
 		SET := SubStr(SET, 3)
 		
 		query := "UPDATE " this.QuoteIdentifier(tableName) " SET " SET " WHERE " WHERE

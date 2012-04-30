@@ -169,6 +169,10 @@ class DataBase
 		throw Exceptions.MustOverride()
 	}
 	
+	ToSqlLiteral(value) {
+		throw Exceptions.MustOverride()
+	}
+	
 	EscapeString(string){
 		throw Exceptions.MustOverride()
 	}
