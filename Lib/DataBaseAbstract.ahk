@@ -169,6 +169,10 @@ class DataBase
 		throw Exceptions.MustOverride()
 	}
 	
+	GetQueryLiteral(value) {
+		throw Exceptions.MustOverride()
+	}
+	
 	EscapeString(string){
 		throw Exceptions.MustOverride()
 	}
