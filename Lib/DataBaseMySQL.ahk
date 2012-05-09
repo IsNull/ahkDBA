@@ -180,8 +180,8 @@ class DataBaseMySQL extends DBA.DataBase
 		
 		SET := ""
 		for col, val in fields
-			SET .= ", " this.QuoteIdentifier(col) " = " this.ToSqlLiteral(val)
-		SET := SubStr(SET, 3)
+			SET .= "AND " this.QuoteIdentifier(col) " = " this.EscapeString(val)
+		SET := SubStr(SET, 5)
 		
 		query := "UPDATE " this.QuoteIdentifier(tableName) " SET " SET " WHERE " WHERE
 		return db.Query(query)
