@@ -143,6 +143,10 @@ class DataBase
 	static TRUE := Object()
 	static FALSE := Object()
 	
+	__delete() {
+		this.Close()
+	}
+	
 	IsValid(){
 		throw Exceptions.MustOverride()
 	}
@@ -213,6 +217,10 @@ class DataBase
 class RecordSet
 {
 	_currentRow := 0 	; Row
+	
+	__delete() {
+		this.Close()
+	}
 	
 	MoveNext(){
 		throw Exceptions.MustOverride()
