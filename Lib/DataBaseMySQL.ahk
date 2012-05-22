@@ -142,6 +142,17 @@ class DataBaseMySQL extends DBA.DataBase
 	
 	InsertMany(records, tableName){
 		sql := ""
+		
+		;TODO: build query like:
+		
+		
+		;INSERT INTO table
+		;(col1, col2, col3)
+		;Values
+		;('hello', 'world', 12)
+		;('muck', 'buck', 4)
+		;('max', 'frisch', 11)
+		
 		for each, record in records
 		{
 			insertSQL := "INSERT INTO " this.QuoteIdentifier(tableName) " "
@@ -157,9 +168,33 @@ class DataBaseMySQL extends DBA.DataBase
 			insertSQL .= colstring " " valString "; "
 			sql .= insertSQL
 		}
-		
+		FileAppend, %sql%, insertSQL.log
 		return this.Query(sql)
 	}
+	/*
+	* Original Method, keept for reference.
+	* Will be deleted soon
+	*
+	InsertMany(records, tableName){
+		sql := ""
+		for each, record in records
+		{
+			insertSQL := "INSERT INTO " this.QuoteIdentifier(tableName) " "
+			colstring := ""
+			valString := ""
+			for column, value in record
+			{
+				colstring .= ", " this.QuoteIdentifier(column)
+				valString .= ", " this.ToSqlLiteral(value)
+			}
+			colstring := "(" SubStr(colstring, 3) ")"
+			valString := "VALUES (" SubStr(valString, 3) ")"
+			insertSQL .= colstring " " valString "; "
+			sql .= insertSQL
+		}
+		return this.Query(sql)
+	}
+	*/
 	
 	Insert(record, tableName){
 		records := new Collection()

@@ -44,10 +44,12 @@ ReConnect:
 	if(IsObject(currentDB))
 	{
 		if(databaseType = "SQLite"){
-			CreateTestData(currentDB) ; SQLite only
+			CreateTestDataSQLite(currentDB)
+		}else if(databaseType = "mySQL"){
+			CreateTestDataMySQL(currentDB)
 		}
 
-		TestInsert(currentDB)
+		;TestInsert(currentDB)
 
 		gosub, RunSQL
 	}else{
@@ -170,7 +172,7 @@ ShowTable(listView, table){
 	GuiControl, +ReDraw, %listView%
 }
 
-CreateTestData(db){
+CreateTestDataSQLite(db){
 	
 	try
 	{
@@ -196,7 +198,52 @@ CreateTestData(db){
 	}catch{
 		;// ignore
 	}
+}
+
+CreateTestDataMySQL(db){
 	
+	try
+	{
+		SB_SetText("Create Test Data")
+
+		createTableSQL =
+		(Ltrim
+				CREATE TABLE IF NOT EXISTS Test (
+				  Name VARCHAR(250),
+				  Fname VARCHAR(250),
+				  Phone VARCHAR(250),
+				  Room VARCHAR(250),
+				  PRIMARY KEY (Name, Fname)
+				`)
+		)		
+		db.Query(createTableSQL)
+
+
+		db.BeginTransaction()
+		{
+			_SQL := "('Name#', 'Fname#', 'Phone#', 'Room#')"
+			sQry := "INSERT INTO Test (Name, Fname, Phone, Room)`nVALUES`n"
+			i := 1
+			
+			Loop, 500 {
+			   StringReplace, cSQL, _SQL, #, %i%, All
+				sQry .= cSQL ",`n"
+			   i++
+			}
+			
+			sQry := substr(sQry,1,StrLen(sQry)-2) ";"
+			
+			
+			if (!db.Query(sQry)) {
+				  Msg := "ErrorLevel: " . ErrorLevel . "`n" . SQLite_LastError()
+				  MsgBox, 0, ERROR from EXEC, %Msg%
+			}
+
+			
+		}db.EndTransaction()
+	}catch{
+		;// ignore
+	}
 }
 
 
