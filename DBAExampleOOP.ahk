@@ -49,7 +49,7 @@ ReConnect:
 			CreateTestDataMySQL(currentDB)
 		}
 
-		;TestInsert(currentDB)
+		TestInsert(currentDB)
 
 		gosub, RunSQL
 	}else{

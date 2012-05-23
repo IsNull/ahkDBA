@@ -1,6 +1,6 @@
 ﻿#Include <Base>
 /*
-   Simple Collection Klasse
+   Basic Collection implementation
 */
 class Collection
 {
@@ -34,7 +34,7 @@ class Collection
    }
    
    /*
-   Gibt die anzahl Elemente in dieser Collection zurück
+   Returns the count of elements contained in this collection
    */
    Count(){
       i := 0
@@ -42,6 +42,22 @@ class Collection
          i++
       return i
    }
+   
+   /*
+   * Returns true if this collection is empty
+   */
+   IsEmpty(){
+      return this.Count() == 0
+   }
+   
+   First(){
+      return this[this.MinIndex()]
+   }
+   
+   Last(){
+      return this[this.MaxIndex()]
+   }
+   
    
    /*
       Sortiert die Liste

@@ -141,61 +141,38 @@ class DataBaseMySQL extends DBA.DataBase
 	}
 	
 	InsertMany(records, tableName){
-		sql := ""
 		
-		;TODO: build query like:
+		if(!is(records, Collection) || records.IsEmpty())
+			return false
 		
+		sql := "INSERT INTO " tableName "`n"
+		colString := ""
 		
-		;INSERT INTO table
-		;(col1, col2, col3)
-		;Values
-		;('hello', 'world', 12)
-		;('muck', 'buck', 4)
-		;('max', 'frisch', 11)
+		for column, value in records.First()
+		{
+			colstring .= this.QuoteIdentifier(column) ","
+		}
+		StringTrimRight, colstring, colstring, 1
+		sql .= "(" colstring ")`nVALUES`n"
 		
 		for each, record in records
 		{
-			insertSQL := "INSERT INTO " this.QuoteIdentifier(tableName) " "
-			colstring := ""
 			valString := ""
 			for column, value in record
 			{
-				colstring .= ", " this.QuoteIdentifier(column)
-				valString .= ", " this.ToSqlLiteral(value)
+				valString .=  this.ToSqlLiteral(value) ","
 			}
-			colstring := "(" SubStr(colstring, 3) ")"
-			valString := "VALUES (" SubStr(valString, 3) ")"
-			insertSQL .= colstring " " valString "; "
-			sql .= insertSQL
+			StringTrimRight, valString, valString, 1
+			sql .= "(" valString "),`n"
 		}
-		FileAppend, %sql%, insertSQL.log
+		StringTrimRight, colstring, colstring, 1
+		sql := Trim(sql," `t`r`n,") ";"
+		
+		;FileAppend,`n---------`n%sql%`n, dba_sql.log
 		return this.Query(sql)
 	}
-	/*
-	* Original Method, keept for reference.
-	* Will be deleted soon
-	*
-	InsertMany(records, tableName){
-		sql := ""
-		for each, record in records
-		{
-			insertSQL := "INSERT INTO " this.QuoteIdentifier(tableName) " "
-			colstring := ""
-			valString := ""
-			for column, value in record
-			{
-				colstring .= ", " this.QuoteIdentifier(column)
-				valString .= ", " this.ToSqlLiteral(value)
-			}
-			colstring := "(" SubStr(colstring, 3) ")"
-			valString := "VALUES (" SubStr(valString, 3) ")"
-			insertSQL .= colstring " " valString "; "
-			sql .= insertSQL
-		}
-		return this.Query(sql)
-	}
-	*/
 	
+
 	Insert(record, tableName){
 		records := new Collection()
 		records.Add(record)
