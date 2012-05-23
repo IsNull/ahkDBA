@@ -241,12 +241,18 @@ HandleMySQLError(db, message, query="") {
 ;============================================================
 ; mysql get address
 ;============================================================ 
+
+
 GetUIntAtAddress(_addr, _offset)
 {
-   local addr
-   addr := _addr + _offset * 4
-   return *addr + (*(addr + 1) << 8) +  (*(addr + 2) << 16) + (*(addr + 3) << 24)
+   return NumGet(_addr+0,_offset * 4, "uint")
 }
+
+GetPtrAtAddress(_addr, _offset)
+{
+   return NumGet(_addr+0,_offset * A_PtrSize, "ptr")
+}
+
 
 ;============================================================
 ; internal: dump resultset from given Query to string
@@ -292,7 +298,7 @@ __MySQL_Query_Dump(_db, _query)
       Loop %fieldCount%
       {
          length := GetUIntAtAddress(lengths, A_Index - 1)
-         fieldPointer := GetUIntAtAddress(row, A_Index - 1)
+         fieldPointer := GetPtrAtAddress(row, A_Index - 1)
          field := StrGet(fieldPointer, length, "CP0")
          resultString := resultString . field
          if (A_Index < fieldCount)
@@ -400,21 +406,22 @@ class MySQL_Field
    }
    
    Name(){
-      adr := GetUIntAtAddress(this.ptr, 0)
+      adr := GetPtrAtAddress(this.ptr, 0)
       return StrGet(adr, 255, "CP0")
    }
    
    OrgName(){
-      adr := GetUIntAtAddress(this.ptr, 4)
+      adr := GetPtrAtAddress(this.ptr, 4)
       return StrGet(adr, 255, "CP0")
    }
    
    Table(){
-      adr := GetUIntAtAddress(this.ptr, 8)
+      adr := GetPtrAtAddress(this.ptr, 8)
       return StrGet(adr, 255, "CP0")
    }
+   
    OrgTable(){
-      adr := GetUIntAtAddress(this.ptr, 12)
+      adr := GetPtrAtAddress(this.ptr, 12)
       return StrGet(adr, 255, "CP0")
    }
    
