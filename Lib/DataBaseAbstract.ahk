@@ -174,7 +174,15 @@ class DataBase
 	}
 	
 	ToSqlLiteral(value) {
-		throw Exceptions.MustOverride()
+		if (IsObject(value)) {
+			if (value == DBA.DataBase.NULL)
+				return "NULL"
+			if (value == DBA.DataBase.TRUE)
+				return "TRUE"
+			if (value == DBA.DataBase.FALSE)
+				return "FALSE"
+		}
+		return "'" this.EscapeString(value) "'"
 	}
 	
 	EscapeString(string){

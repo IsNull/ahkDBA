@@ -84,10 +84,9 @@ class DataBaseMySQL extends DBA.DataBase
 				this.Connect()
 				result := MySQL_Query(this._handleDB, sql)
 				if (result != 0)
-					return false ; we failed again. bye bye
+					throw new Exception(BuildMySQLErrorStr(this._handleDB, "Query failed because of lost connection. Reconnect failed too." errCode, sql), -1)
 			} else {
-				HandleMySQLError(this._handleDB, "dbQuery Fail", sql)
-				return false ; unexpected error. bye bye
+				throw new Exception(BuildMySQLErrorStr(this._handleDB, "Query Failed Error " errCode, sql), -1)
 			}
 		}
 		
@@ -104,19 +103,7 @@ class DataBaseMySQL extends DBA.DataBase
 	Query(sql){
 		return this._GetTableObj(sql)
 	}
-	
-	ToSqlLiteral(value) {
-		if (IsObject(value)) {
-			if (value == DBA.DataBase.NULL)
-				return "NULL"
-			if (value == DBA.DataBase.TRUE)
-				return "TRUE"
-			if (value == DBA.DataBase.FALSE)
-				return "FALSE"
-		}
-		return "'" this.EscapeString(value) "'"
-	}
-	
+
 	EscapeString(str){
 		return Mysql_escape_string(str)
 	}
@@ -203,19 +190,22 @@ class DataBaseMySQL extends DBA.DataBase
 	
 		result := MySQL_Query(this._handleDB, sql)
 		
+		/*
+		* Instant reconnect attempt
+		*/
 		if (result != 0) {
 			errCode := this.ErrCode()
-			if(errCode == 2004 || errCode == 2006 || errCode == 0){ ;// we probably lost the connection
+			if(errCode == 2003 || errCode == 2006 || errCode == 0){ ;// we've lost the connection
 				;// try reconnect
 				this.Connect()
 				result := MySQL_Query(this._handleDB, sql)
 				if (result != 0)
-					return false ; we failed again. bye bye
+					throw new Exception(BuildMySQLErrorStr(this._handleDB, "Query failed because of lost connection. Reconnect failed too." errCode, sql), -1)
 			} else {
-				HandleMySQLError(this._handleDB, "dbQuery Fail", sql)
-				return false ; unexpected error. bye bye
+				throw new Exception(BuildMySQLErrorStr(this._handleDB, "Query Failed Error " errCode, sql), -1)
 			}
 		}
+		
 
 		requestResult := MySql_Store_Result(this._handleDB)
 
