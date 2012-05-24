@@ -94,11 +94,9 @@ MySQL_Connect(host, user, password, database, port = 3306){
 
 
    db := DllCall("libmySQL.dll\mysql_init", "ptr", 0)
-   If (db = 0)
-   {
-      MsgBox 16, MySQL Error 445, Not enough memory to connect to MySQL
-      ExitApp
-   }
+   
+   if (db = 0)
+      throw Exception("MySQL Error 445, Not enough memory to connect to MySQL", -1)   
 
    connection := DllCall("libmySQL.dll\mysql_real_connect"
          , "ptr", db
@@ -111,10 +109,7 @@ MySQL_Connect(host, user, password, database, port = 3306){
          , "UInt", 0)   ; client_flag
 
    If (connection == 0)
-   {
-      HandleMySQLError(db, "Cannot connect to database")
-      return
-   }
+      throw Exception(BuildMySQLErrorStr(db, "Cannot connect to database"), -1)
    
    ;debugging only:
    ;MsgBox % "Ping database: " . MySQL_Ping(db) . "`nServer version: " . MySQL_GetVersion(db)
@@ -227,11 +222,10 @@ MySQL_fetch_fields(requestResult){
 /*
 ; mysql error handling
 */
-HandleMySQLError(db, message, query="") {
+BuildMySQLErrorStr(db, message, query="") {
    errorCode := DllCall("libmySQL.dll\mysql_errno", "UInt", db)
    errorStr := DllCall("libmySQL.dll\mysql_error", "UInt", db, "AStr")
-   MsgBox 16, MySQL Error: %message%, Error %errorCode%: %errorStr%`n`n%query%
-   Return
+   Return, "MySQL Error: " message "Error " errorCode ": " errorStr "`n`n" query
 }
 
 
@@ -262,14 +256,12 @@ __MySQL_Query_Dump(_db, _query)
    local resultString, result, requestResult, fieldCount
    local row, lengths, length, fieldPointer, field
 
-   query4error := RegExReplace(_query , "\t", "   ")    ; convert tabs to spaces so error message formatting is legible
+
    result := DllCall("libmySQL.dll\mysql_query", "UInt", _db , "AStr", _query)
-         
-   If (result != 0) {
-      errorMsg = %_query%
-      HandleMySQLError(_db, "dbQuery Fail", query4error)
-      Return
-   }
+   
+   If (result != 0)
+      throw new Exception(BuildMySQLErrorStr(_db, "dbQuery Fail", RegExReplace(_query , "\t", "   ")), -1)
+   
    
    requestResult := MySql_Store_Result(_db)
    
