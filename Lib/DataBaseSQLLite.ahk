@@ -75,14 +75,23 @@ class DataBaseSQLLite extends DBA.DataBase
 	*/
 	Query(sql){
 		if (RegExMatch(sql, "i)^\s*SELECT\s")){
-			return, this._GetTableObj(sql)
+			tbl := this._GetTableObj(sql)
+			return tbl
 		} else {
 		  return SQLite_Exec(this._handleDB, sql)
 		}
 	}
 	
 	EscapeString(str){
-		return Mysql_escape_string(str)
+		StringReplace, str, str, ', '', All ; replace all single quotes with double single-quotes. pascal escape
+		return str
+	}
+	
+	QuoteIdentifier(identifier) {
+		; ` characters are actually valid. Technically everthing but a literal null U+0000.
+		; Everything else is fair game: http://dev.mysql.com/doc/refman/5.0/en/identifiers.html
+		StringReplace, identifier, identifier, ``, ````, All
+		return "``" identifier "``"
 	}
 	
 	
@@ -103,29 +112,37 @@ class DataBaseSQLLite extends DBA.DataBase
 	}
 	
 	InsertMany(records, tableName){
-		SQLite_FetchData("Select * from " tableName, tableColumns)
-		sql := ""
+		
+		if(!is(records, Collection) || records.IsEmpty())
+			return false
+		
+		sql := "INSERT INTO " tableName "`n"
+		colString := ""
+		
+		for column, value in records.First()
+		{
+			colstring .= this.QuoteIdentifier(column) ","
+		}
+		StringTrimRight, colstring, colstring, 1
+		sql .= "(" colstring ")`nVALUES`n"
 		
 		for each, record in records
 		{
-			insertSQL := "INSERT INTO " tableName " "
-			colstring := "("
-			valString := "VALUES ("
+			valString := ""
 			for column, value in record
 			{
-				colstring .= column ", " 
-				valString .= "'" this.EscapeString(value) "', "
+				valString .=  this.ToSqlLiteral(value) ","
 			}
-			colstring := SubStr(colstring,1, strlen(colstring)-2)
-			valString := SubStr(valString,1, strlen(valString)-2)
-			colstring .= ")"
-			valString .= ")"
-			insertSQL .= colstring " " valString ";"
-			sql .= insertSQL
+			StringTrimRight, valString, valString, 1
+			sql .= "(" valString "),`n"
 		}
+		StringTrimRight, colstring, colstring, 1
+		sql := Trim(sql," `t`r`n,") ";"
 		
+		FileAppend,`n---------`n%sql%`n, dba_sqlite_sql.log
 		return this.Query(sql)
 	}
+	
 	
 	Insert(record, tableName){
 		col := new Collection()
@@ -156,21 +173,21 @@ class DataBaseSQLLite extends DBA.DataBase
 	   mytable := ""
 	   Err := 0
 	   _SQLite_StrToUTF8(SQL, UTF8)
-	   RC := DllCall("SQlite3\sqlite3_get_table", "UInt", dbh, "UInt", &UTF8, "UIntP", mytable
-				   , "UIntP", rows, "UIntP", cols, "UIntP", err, "Cdecl Int")
+	   RC := DllCall("SQlite3\sqlite3_get_table", "Ptr", dbh, "Ptr", &UTF8, "Ptr*", mytable
+				   , "Ptr*", rows, "Ptr*", cols, "Ptr*", err, "Cdecl Int")
 	   If (ErrorLevel) {
 		  SQLite_LastError("ERROR: DLLCall sqlite3_get_table failed!")
 		  Return False
 	   }
 	   If (rc) {
 		  SQLite_LastError(StrGet(err, "UTF-8"))
-		  DllCall("SQLite3\sqlite3_free", "UInt", err)
+		  DllCall("SQLite3\sqlite3_free", "Ptr", err)
 		  ErrorLevel := rc
 		  return false
 	   }
 
 	   if (maxResult = 0) {
-		  DllCall("SQLite3\sqlite3_free_table", "UInt", mytable, "Cdecl")   
+		  DllCall("SQLite3\sqlite3_free_table", "Ptr", mytable, "Cdecl")   
 		  If (ErrorLevel) {
 			 SQLite_LastError("ERROR: DLLCall sqlite3_close failed!")
 			 Return False
@@ -188,7 +205,7 @@ class DataBaseSQLLite extends DBA.DataBase
 	   Loop, % cols
 	   {
 		  names.Add(StrGet(NumGet(mytable+0, Offset), "UTF-8"))
-		  Offset += 4
+		  Offset += A_PtrSize
 	   }
 
 		myRows := new Collection()
@@ -198,14 +215,14 @@ class DataBaseSQLLite extends DBA.DataBase
 			Loop, % Cols 
 			{
 				fields.Add(StrGet(NumGet(mytable+0, Offset), "UTF-8"))
-				Offset += 4
+				Offset += A_PtrSize
 			}
 			myRows.Add(new DBA.Row(Names, fields))
 		}
 		tbl := new DBA.Table(myRows, Names)
 		
 		; Free Results Memory
-		DllCall("SQLite3\sqlite3_free_table", "UInt", mytable, "Cdecl")   
+		DllCall("SQLite3\sqlite3_free_table", "Ptr", mytable, "Cdecl")   
 		if (ErrorLevel) {
 			SQLite_LastError("ERROR: DLLCall sqlite3_close failed!")
 			return false

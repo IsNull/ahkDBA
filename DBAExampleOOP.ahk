@@ -4,6 +4,8 @@ SetWorkingDir %A_ScriptDir%
 #Include <DBA>
 
 
+
+
 global initialSQL := "SELECT * FROM Test"
 global databaseType := ""
 currentDB := 0 ; current db connection
@@ -39,10 +41,11 @@ ReConnect:
 	databaseType := ddDatabaseType
 	connectionString := ddDatabaseConnection
 
-	currentDB := DBA.DataBaseFactory.OpenDataBase(databaseType, connectionString)
+	try {
+		
+		currentDB := DBA.DataBaseFactory.OpenDataBase(databaseType, connectionString)
 
-	if(IsObject(currentDB))
-	{
+
 		if(databaseType = "SQLite"){
 			CreateTestDataSQLite(currentDB)
 		}else if(databaseType = "mySQL"){
@@ -51,10 +54,13 @@ ReConnect:
 
 		TestInsert(currentDB)
 
-		gosub, RunSQL
-	}else{
-		MsgBox Failed to create connection. Check your Connection string and DB Settings!
+		GoSub, RunSQL
+
 	}
+	catch e
+		MsgBox,16, Error, % "Failed to create connection. Check your Connection string and DB Settings!`n`nException Detail:`n" e.What "`n"  e.Message
+
+
 return
 
 
@@ -73,9 +79,7 @@ Exitapp
 ;=======================================================================================================================
 RunSQL:
 	GuiControlGet, SQL
-	
 
-	
 	if(IsObject(currentDB))
 	{
 		state := ""
@@ -84,22 +88,26 @@ RunSQL:
 		   SB_SetText("No SQL entered")
 		   Return
 		}
-		res := currentDB.Query(SQL)
 		
-		if(is(res, DBA.Table)){
-			SB_SetText("The Selection yielded " res.Count() " results.")
-			ShowTable("ResultsLV", res)
-		} else {
-			state := "Non selection Query executed! Ret: " res
-		}
+		try {
 		
-		if(!IsObject(res) && !res){
-				state := "!# " currentDB.GetLastErrorMsg() " " res
-		}
+			res := currentDB.Query(SQL)
+		
+			if(is(res, DBA.Table)){
+				SB_SetText("The Selection yielded " res.Count() " results.")
+				ShowTable("ResultsLV", res)
+			} else {
+				state := "Non selection Query executed! Ret: " res
+			}
+			
+		} catch e
+			state := "!# " e.What " " e.Message
+
+
 		if(state != "")
 			SB_SetText(state)
 	}else {
-		MsgBox No Connection avaiable. Please connect to a db first!
+		MsgBox,16, Error, No Connection avaiable. Please connect to a db first!
 	}
 return
 
@@ -127,7 +135,7 @@ TestInsert(mydb){
 	
 	records.Add(record)
 	records.Add(record2)	
-				
+	
 	mydb.InsertMany(records, "Test")
 }
 
@@ -180,21 +188,7 @@ CreateTestDataSQLite(db){
 		
 		db.Query("CREATE TABLE Test (Name, Fname, Phone, Room, PRIMARY KEY(Name ASC, FName ASC));")
 		
-		db.BeginTransaction()
-		{
-			_SQL := "INSERT INTO Test VALUES('Name#', 'Fname#', 'Phone#', 'Room#');"
-			sQry := ""
-			i := 501
-			Loop, 1000 {
-			   StringReplace, cSQL, _SQL, #, %i%, All
-				sQry .= cSQL
-			   i++
-			}
-			if (!db.Query(sQry)) {
-				  Msg := "ErrorLevel: " . ErrorLevel . "`n" . SQLite_LastError()
-				  MsgBox, 0, ERROR from EXEC, %Msg%
-			}
-		}db.EndTransaction()
+		InsertTestData(db)
 	}catch{
 		;// ignore
 	}
@@ -218,33 +212,38 @@ CreateTestDataMySQL(db){
 		)		
 		db.Query(createTableSQL)
 
-
-		db.BeginTransaction()
-		{
-			_SQL := "('Name#', 'Fname#', 'Phone#', 'Room#')"
-			sQry := "INSERT INTO Test (Name, Fname, Phone, Room)`nVALUES`n"
-			i := 1
-			
-			Loop, 500 {
-			   StringReplace, cSQL, _SQL, #, %i%, All
-				sQry .= cSQL ",`n"
-			   i++
-			}
-			
-			sQry := substr(sQry,1,StrLen(sQry)-2) ";"
-			
-			
-			if (!db.Query(sQry)) {
-				  Msg := "ErrorLevel: " . ErrorLevel . "`n" . SQLite_LastError()
-				  MsgBox, 0, ERROR from EXEC, %Msg%
-			}
-
-			
-		}db.EndTransaction()
+		InsertTestData(db)
+		
 	}catch{
 		;// ignore
 	}
 }
+
+InsertTestData(db)
+{
+	db.BeginTransaction()
+	{
+		_SQL := "('Name#', 'Fname#', 'Phone#', 'Room#')"
+		sQry := "INSERT INTO Test (Name, Fname, Phone, Room)`nVALUES`n"
+		i := 1
+		
+		Loop, 500 {
+		   StringReplace, cSQL, _SQL, #, %i%, All
+			sQry .= cSQL ",`n"
+		   i++
+		}
+		
+		sQry := substr(sQry,1,StrLen(sQry)-2) ";"
+		
+		
+		if (!db.Query(sQry)) {
+			  Msg := "ErrorLevel: " . ErrorLevel . "`n" . SQLite_LastError()
+			  MsgBox, 0, ERROR from EXEC, %Msg%
+		}
+
+	}db.EndTransaction()
+}
+
 
 
 ArrayToGuiString(items , bSelectFirst){
