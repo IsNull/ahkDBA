@@ -85,17 +85,26 @@
 */
 SQLite_Startup() {
    Static MinVersion := "35"
-   If !(DLL := DllCall("LoadLibrary", "Str", SQLite_DLLPath())) {
-      MsgBox, 16, SQLite ERROR, % "DLL " . SQLite_DLLPath() . "does not exist!"
-      Return False
-   }
-   _Version := SQLite_LibVersion()
-   If (SubStr(RegExReplace(_Version, "\."), 1, 2) < MinVersion) {
-      MsgBox, 16, SQLite ERROR, % "Version " . _Version .  " of SQLite3.dll is not supported!"
-      Return False
-   }
-   _SQLite_ModuleHandle(DLL)
-   Return True
+   
+   sqliteDllPath := SQLite_DLLPath()
+   
+   if(FileExist(sqliteDllPath))
+   {
+      DLL := DllCall("LoadLibrary", "Str", sqliteDllPath)
+      
+      if(!DLL)
+         throw Exception("Can't load " . sqliteDllPath . "!", -1)
+      
+      ver := SQLite_LibVersion()
+      
+      if(SubStr(RegExReplace(ver, "\."), 1, 2) < MinVersion)
+         throw Exception("SQLite ERROR: Version " . ver .  " of SQLite3.dll is not supported!", -1)
+      
+      _SQLite_ModuleHandle(DLL)
+   }else
+      throw Exception("SQLite Dll not found:`n" . sqliteDllPath, -1)
+  
+   Return true
 }
 ;=======================================================================================================================
 ; Function Name:    SQLite_Shutdown()
@@ -106,7 +115,7 @@ SQLite_Startup() {
 ;=======================================================================================================================
 SQLite_Shutdown() {
    DllCall("FreeLibrary", "UInt", _SQLite_ModuleHandle())
-   Return (ErrorLevel ? False : True)
+   Return (ErrorLevel ? false : true)
 }
 ;=======================================================================================================================
 ; Function Name:    SQLite_OpenDB()
@@ -132,7 +141,7 @@ SQLite_OpenDB(DBFile) {
       DBFile := ":memory:"
    _SQLite_StrToUTF8(DBFile, UTF8)
    DB := 0
-   RC := DllCall("SQlite3\sqlite3_open_v2", "UInt", &UTF8, "UIntP", DB, "UInt", Flags, "UInt", 0, "Cdecl Int")
+   RC := DllCall("SQlite3\sqlite3_open_v2", "Ptr", &UTF8, "Ptr*", DB, "UInt", Flags, "Ptr", 0, "Cdecl Int")
    If (ErrorLevel) {
       SQLite_LastError("ERROR: DLLCall sqlite3_open_v2 failed!")
       Return False
@@ -162,7 +171,7 @@ SQLite_CloseDB(DB) {
       DB := _SQLite_CurrentDB()
    If !_SQLite_CheckDB(DB)
       Return True
-   RC := DllCall("SQlite3\sqlite3_close", "UInt", DB, "Cdecl Int")
+   RC := DllCall("SQlite3\sqlite3_close", "Ptr", DB, "Cdecl Int")
    If (ErrorLevel) {
       SQLite_LastError("ERROR: DLLCall sqlite3_close failed!")
       Return False
@@ -219,21 +228,21 @@ SQLite_GetTable(DB, SQL, ByRef Rows, ByRef Cols, ByRef Names, ByRef Result, MaxR
    Table := ""
    Err := 0
    _SQLite_StrToUTF8(SQL, UTF8)
-   RC := DllCall("SQlite3\sqlite3_get_table", "UInt", DB, "UInt", &UTF8, "UIntP", Table
-               , "UIntP", Rows, "UIntP", Cols, "UIntP", Err, "Cdecl Int")
+   RC := DllCall("SQlite3\sqlite3_get_table", "Ptr", DB, "Ptr", &UTF8, "Ptr*", Table
+               , "Ptr*", Rows, "Ptr*", Cols, "Ptr*", Err, "Cdecl Int")
    If (ErrorLevel) {
       SQLite_LastError("ERROR: DLLCall sqlite3_get_table failed!")
       Return False
    }
    If (RC) {
       SQLite_LastError(StrGet(Err, "UTF-8"))
-      DllCall("SQLite3\sqlite3_free", "UInt", Err)
+      DllCall("SQLite3\sqlite3_free", "Ptr", Err)
       ErrorLevel := RC
       Return False
    }
    Result := Array()
    If (MaxResult = 0) {
-      DllCall("SQLite3\sqlite3_free_table", "UInt", Table, "Cdecl")   
+      DllCall("SQLite3\sqlite3_free_table", "Ptr", Table, "Cdecl")   
       If (ErrorLevel) {
          SQLite_LastError("ERROR: DLLCall sqlite3_close failed!")
          Return False
@@ -250,18 +259,18 @@ SQLite_GetTable(DB, SQL, ByRef Rows, ByRef Cols, ByRef Names, ByRef Result, MaxR
    Names := Array()
    Loop, %Cols% {
       Names[A_Index] := StrGet(NumGet(Table+0, Offset), "UTF-8")
-      Offset += 4
+      Offset += A_PtrSize
    }
    Loop, %GetRows% {
       I := A_Index
       Result[I] := Array()
       Loop, %Cols% {
          Result[I][A_Index] := StrGet(NumGet(Table+0, Offset), "UTF-8")
-         Offset += 4
+         Offset += A_PtrSize
       }
    }
    ; Free Results Memory
-   DllCall("SQLite3\sqlite3_free_table", "UInt", Table, "Cdecl")   
+   DllCall("SQLite3\sqlite3_free_table", "Ptr", Table, "Cdecl")   
    If (ErrorLevel) {
       SQLite_LastError("ERROR: DLLCall sqlite3_close failed!")
       Return False
@@ -289,15 +298,15 @@ SQLite_Exec(DB, SQL) {
    }
    _SQLite_StrToUTF8(SQL, UTF8)
    Err := 0
-   RC := DllCall("SQlite3\sqlite3_exec", "UInt", DB, "UInt", &UTF8, "UInt", 0, "UInt", 0
-               , "UIntP", Err, "Cdecl Int")
+   RC := DllCall("SQlite3\sqlite3_exec", "Ptr", DB, "Ptr", &UTF8, "Ptr", 0, "Ptr", 0
+               , "Ptr*", Err, "Cdecl Int")
    If (ErrorLevel) {
       SQLite_LastError("ERROR: DLLCall sqlite3_exec failed!")
       Return False
    }
    If (RC) {
       SQLite_LastError(StrGet(Err, "UTF-8"))
-      DllCall("SQLite3\sqlite3_free", "UInt", Err)
+      DllCall("SQLite3\sqlite3_free", "Ptr", Err)
       ErrorLevel := RC
       Return False
    }
@@ -323,8 +332,8 @@ SQlite_Query(DB, SQL) {
    }
    Query := pSQL := 0
    Len := _SQLite_StrToUTF8(SQL, UTF8)
-   RC := DllCall("SQlite3\sqlite3_prepare", "UInt", DB, "UInt", &UTF8, "Int", Len
-               , "UIntP", Query, "UIntP", pSQL, "Cdecl Int")
+   RC := DllCall("SQlite3\sqlite3_prepare", "Ptr", DB, "Ptr", &UTF8, "Int", Len
+               , "Ptr*", Query, "Ptr*", pSQL, "Cdecl Int")
    If (ErrorLeveL) {
       SQLite_LastError("ERROR: DLLCall sqlite3_prepare failed!")
       Return False
@@ -358,7 +367,7 @@ SQLite_FetchNames(Query, ByRef Names) {
       ErrorLevel := _SQLite_ReturnCode("SQLITE_ERROR")
       Return False
    }
-   RC := DllCall("SQlite3\sqlite3_column_count", "UInt", Query, "Cdecl Int")
+   RC := DllCall("SQlite3\sqlite3_column_count", "Ptr", Query, "Cdecl Int")
    If (ErrorLevel) {
       SQLite_LastError("ERROR: DLLCall sqlite3_column_count failed!")
       Return False
@@ -369,7 +378,7 @@ SQLite_FetchNames(Query, ByRef Names) {
       Return False
    }
    Loop, %RC% {
-      StrPtr := DllCall("SQlite3\sqlite3_column_name", "UInt", Query, "Int", A_Index - 1, "Cdecl UInt")
+      StrPtr := DllCall("SQlite3\sqlite3_column_name", "Ptr", Query, "Int", A_Index - 1, "Cdecl Ptr")
       If (ErrorLevel) {
          SQLite_LastError("ERROR: DLLCall sqlite3_column_name failed!")
          Return False
@@ -398,7 +407,7 @@ SQLite_FetchData(Query, ByRef Row) {
       ErrorLevel := _SQLite_ReturnCode("SQLITE_ERROR")
       Return False
    }
-   RC := DllCall("SQlite3\sqlite3_step", "UInt", Query, "Cdecl Int")
+   RC := DllCall("SQlite3\sqlite3_step", "Ptr", Query, "Cdecl Int")
    If (ErrorLevel) {
       SQLite_LastError("ERROR: DLLCall sqlite3_step failed!")
       Return False
@@ -413,7 +422,7 @@ SQLite_FetchData(Query, ByRef Row) {
       ErrorLevel := RC
       Return False
    }
-   RC := DllCall("SQlite3\sqlite3_data_count", "UInt", Query, "Cdecl Int")
+   RC := DllCall("SQlite3\sqlite3_data_count", "Ptr", Query, "Cdecl Int")
    If (ErrorLevel) {
       SQLite_LastError("ERROR: DLLCall sqlite3_data_count failed!")
       Return False
@@ -425,7 +434,7 @@ SQLite_FetchData(Query, ByRef Row) {
    }
    Row := Array()
    Loop, %RC% {
-      CType := DllCall("SQlite3\sqlite3_column_type", "UInt", Query, "Int", A_Index - 1, "Cdecl Int")
+      CType := DllCall("SQlite3\sqlite3_column_type", "Ptr", Query, "Int", A_Index - 1, "Cdecl Int")
       If (ErrorLevel) {
          SQLite_LastError("ERROR: DLLCall sqlite3_column_type failed!")
          Return False
@@ -433,7 +442,7 @@ SQLite_FetchData(Query, ByRef Row) {
       If (CType = SQLITE_NULL) {
          Row[A_Index] := ""
       } Else {
-         StrPtr := DllCall("SQlite3\sqlite3_column_text", "UInt", Query, "Int", A_Index - 1, "Cdecl UInt")
+         StrPtr := DllCall("SQlite3\sqlite3_column_text", "Ptr", Query, "Int", A_Index - 1, "Cdecl Ptr")
          If (ErrorLevel) {
             SQLite_LastError("ERROR: DLLCall sqlite3_column_text failed!")
             Return False
@@ -461,7 +470,7 @@ SQLite_QueryFinalize(Query) {
       ErrorLevel := _SQLite_ReturnCode("SQLITE_ERROR")
       Return False
    }
-   RC := DllCall("SQlite3\sqlite3_finalize", "UInt", Query, "Cdecl Int")
+   RC := DllCall("SQlite3\sqlite3_finalize", "Ptr", Query, "Cdecl Int")
    If (ErrorLevel) {
       SQLite_LastError("ERROR: DLLCall sqlite3_finalize failed!")
       Return False
@@ -492,7 +501,7 @@ SQLite_QueryReset(Query) {
       ErrorLevel := _SQLite_ReturnCode("SQLITE_ERROR")
       Return False
    }
-   RC := DllCall("SQlite3\sqlite3_reset", "UInt", Query, "Cdecl Int")
+   RC := DllCall("SQlite3\sqlite3_reset", "Ptr", Query, "Cdecl Int")
    If (ErrorLevel) {
       SQLite_LastError("ERROR: DLLCall sqlite3_finalize failed!")
       Return False
@@ -550,6 +559,7 @@ SQLite_SQLiteExe(DBFile, Commands, ByRef Output) {
       Return False
    }
    Cmd = ""%SQLiteExe%" "%DBFile%" < "%InputFile%" > "%OutputFile%""
+      
    RunWait %comspec% /c %Cmd%, , Hide UseErrorLevel
    If (Errorlevel) {
       SQLite_LastError("ERROR: Error occured running " . SQLiteExe . "!")
@@ -577,7 +587,7 @@ SQLite_SQLiteExe(DBFile, Commands, ByRef Output) {
 ;=======================================================================================================================
 SQLite_LibVersion() {
    SQLite_LastError(" ")
-   StrPtr := DllCall("SQlite3\sqlite3_libversion", "Cdecl UInt")
+   StrPtr := DllCall("SQlite3\sqlite3_libversion", "Cdecl Ptr")
    If (ErrorLevel) {
       SQLite_LastError("ERROR: DLLCall sqlite3_libversion failed!")
       Return False
@@ -593,7 +603,7 @@ SQLite_LibVersion() {
 ;                   On Failure - False, check ErrorLevel for details
 ;                                For additional error message call SQLite_LastError()
 ;=======================================================================================================================
-SQLite_LastInsertRowID(DB, ByRef RowID) {
+SQLite_LastInsertRowID(DB, ByRef rowId) {
    SQLite_LastError(" ")
    RowID := 0
    If (DB = -1)
@@ -602,12 +612,11 @@ SQLite_LastInsertRowID(DB, ByRef RowID) {
       SQLite_LastError("ERROR: Invalid DB Handle " . DB . "!")
       Return False
    }
-   RC := DllCall("SQLite3\sqlite3_last_insert_rowid", "UInt", DB, "Cdecl UInt")
+   rowId := DllCall("SQLite3\sqlite3_last_insert_rowid", "Ptr", DB, "Cdecl Int64") ; Each entry in an SQLite table has a unique 64-bit signed integer key called the "rowid".
    If (ErrorLevel) {
       SQLite_LastError("ERROR: DLLCall sqlite3_last_insert_rowid failed!")
       Return False
    }
-   RowID := RC
    Return True
 }
 ;=======================================================================================================================
@@ -629,7 +638,7 @@ SQLite_Changes(DB, ByRef Rows) {
       SQLite_LastError("ERROR: Invalid DB Handle " . DB . "!")
       Return False
    }
-   RC := DllCall("SQLite3\sqlite3_changes", "UInt", DB, "Cdecl UInt")
+   RC := DllCall("SQLite3\sqlite3_changes", "Ptr", DB, "Cdecl Ptr")
    If (ErrorLevel) {
       SQLite_LastError("ERROR: DLLCall sqlite3_changes failed!")
       Return False
@@ -657,7 +666,7 @@ SQLite_TotalChanges(DB, ByRef Rows) {
       SQLite_LastError("ERROR: Invalid DB Handle " . DB . "!")
       Return False
    }
-   RC := DllCall("SQLite3\sqlite3_total_changes", "UInt", DB, "Cdecl UInt")
+   RC := DllCall("SQLite3\sqlite3_total_changes", "Ptr", DB, "Cdecl Ptr")
    If (ErrorLevel) {
       SQLite_LastError("ERROR: DLLCall sqlite3_total_changes failed!")
       Return False
@@ -683,12 +692,12 @@ SQLite_ErrMsg(DB, ByRef Msg) {
       SQLite_LastError("ERROR: Invalid DB Handle " . DB . "!")
       Return False
    }
-   RC := DllCall("SQLite3\sqlite3_errmsg", "UInt", DB, "Cdecl UInt")
+   messagePtr := DllCall("SQLite3\sqlite3_errmsg", "Ptr", DB, "Cdecl Ptr")
    If (ErrorLevel) {
       SQLite_LastError("ERROR: DLLCall sqlite3_errmsg failed!")
       Return False
    }
-   Msg := StrGet(RC, "UTF-8")
+   Msg := StrGet(messagePtr, "UTF-8")
    Return True
 }
 ;=======================================================================================================================
@@ -710,7 +719,7 @@ SQLite_ErrCode(DB, ByRef Code)
       SQLite_LastError("ERROR: Invalid DB Handle " . DB . "!")
       Return False
    }
-   RC := DllCall("SQLite3\sqlite3_errcode", "UInt", DB, "Cdecl UInt")
+   RC := DllCall("SQLite3\sqlite3_errcode", "Ptr", DB, "Cdecl Ptr")
    If (ErrorLevel) {
       SQLite_LastError("ERROR: DLLCall sqlite3_errcode failed!")
       Return False
@@ -738,7 +747,7 @@ SQLite_SetTimeout(DB, Timeout = 1000) {
    }
    If Timeout Is Not Integer
       Timeout := 1000
-   RC := DllCall("SQLite3\sqlite3_busy_timeout", "UInt", DB, "Cdecl Int")
+   RC := DllCall("SQLite3\sqlite3_busy_timeout", "Ptr", DB, "Cdecl Int")
    If (ErrorLevel) {
       SQLite_LastError("ERROR: DLLCall sqlite3_busy_timeout failed!")
       Return False
@@ -772,21 +781,29 @@ SQLite_LastError(Error = "") {
 ; Parameter(s):     Optional Path - Path for SQLite3.dll
 ; Return Value:     Path to SQLite DLL
 ;=======================================================================================================================
+
 SQLite_DLLPath(path = "") {
-   Static DLLPath := ""
-   
+   static DLLPath := ""
+   static dllname := "SQLite3.dll"
+
    if(DLLPath == ""){
-      if (FileExist(A_ScriptDir . "\SQLite3.dll"))
-         DLLPath := A_ScriptDir . "\SQLite3.dll"
-      else if (FileExist(A_ScriptDir . "\Lib\SQLite3.dll"))
-         DLLPath := A_ScriptDir . "\Lib\SQLite3.dll"
+      ; search the dll
+      prefix := (A_PtrSize == 8) ? "x64\" : ""
+      dllpath := prefix . dllname
+      
+      if (FileExist(A_ScriptDir . "\" . dllpath))
+         DLLPath := A_ScriptDir . "\"  . dllpath
+      else
+         DLLPath := A_ScriptDir . "\Lib\" . dllpath
    }
    
    if (path != "")
       DLLPath := Path
 
-   Return DLLPath
+   return DLLPath
 }
+
+
 ;=======================================================================================================================
 ; Function Name:    SQLite_EXEPath()
 ; Description:      Stores/provides the path for SQLite3.exe
