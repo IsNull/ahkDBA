@@ -139,7 +139,7 @@ class DataBaseSQLLite extends DBA.DataBase
 		StringTrimRight, colstring, colstring, 1
 		sql := Trim(sql," `t`r`n,") ";"
 		
-		FileAppend,`n---------`n%sql%`n, dba_sqlite_sql.log
+		;FileAppend,`n---------`n%sql%`n, dba_sqlite_sql.log
 		return this.Query(sql)
 	}
 	
