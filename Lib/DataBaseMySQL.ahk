@@ -73,7 +73,7 @@ class DataBaseMySQL extends DBA.DataBase
 	/*
 		Querys the DB and returns a RecordSet
 	*/
-	OpenRecordSet(sql){
+	OpenRecordSet(sql, editable = false){
 		
 		result := MySQL_Query(this._handleDB, sql)
 		

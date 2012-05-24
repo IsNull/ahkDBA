@@ -169,7 +169,7 @@ class DataBase
 		return myrow
 	}
 	
-	OpenRecordSet(sql){
+	OpenRecordSet(sql, editable = false){
 		throw Exceptions.MustOverride()
 	}
 	
@@ -230,7 +230,15 @@ class RecordSet
 		this.Close()
 	}
 	
+	AddNew(){
+		throw Exceptions.MustOverride()
+	}
+	
 	MoveNext(){
+		throw Exceptions.MustOverride()
+	}
+	
+	Delete(){
 		throw Exceptions.MustOverride()
 	}
 	

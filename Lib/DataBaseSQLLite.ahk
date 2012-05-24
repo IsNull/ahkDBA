@@ -66,7 +66,7 @@ class DataBaseSQLLite extends DBA.DataBase
 	/*
 		Querys the DB and returns a RecordSet
 	*/
-	OpenRecordSet(sql){
+	OpenRecordSet(sql, editable = false){
 		return new DBA.RecordSetSqlLite(this, SQlite_Query(this._handleDB, sql))
 	}
 	

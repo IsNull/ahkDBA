@@ -33,6 +33,12 @@ class ADO
 		static adCmdUnknown := 8
 		static adCmdFile := 256
 		static adCmdTableDirect := 512
+	}
+	
+	class AffectEnum
+	{
+		static adAffectCurrent := 1
+		static adAffectGroup := 2
 	}	
 
 }

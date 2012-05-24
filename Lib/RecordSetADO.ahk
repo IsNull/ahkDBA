@@ -8,9 +8,12 @@ class RecordSetADO extends DBA.RecordSet
 {
 	_adoRS := 0 ; ado recordset
 
-	__New(sql, adoConnection){
+	__New(sql, adoConnection, editable = false){
 		this._adoRS := ComObjCreate("ADODB.Recordset")
-		this._adoRS.Open(sql, adoConnection)
+		if(editable)
+			this._adoRS.Open(sql, adoConnection, ADO.CursorType.adOpenKeyset, ADO.LockType.adLockOptimistic, ADO.CommandType.adCmdTable)
+		else
+			this._adoRS.Open(sql, adoConnection)
 	}
 
 	/*
@@ -37,6 +40,12 @@ class RecordSetADO extends DBA.RecordSet
 		return this._adoRS.EOF
 	}
 	
+	AddNew(){
+		if(this.IsValid())
+		{
+			this._adoRS.AddNew()
+		}	
+	}
 	
 	MoveNext() {
 		if(this.IsValid())
@@ -45,7 +54,19 @@ class RecordSetADO extends DBA.RecordSet
 		}
 	}
 	
+	Delete(){
+		if(this.IsValid() && !this.getEOF())
+		{
+			this._adoRS.Delete(ADO.AffectEnum.adAffectCurrent)
+		}
+	}
 	
+	Update(){
+		if(this.IsValid() && !this.getEOF())
+		{
+			this._adoRS.Update()
+		}
+	}
 
 	Reset() {
 		if(this.IsValid()){

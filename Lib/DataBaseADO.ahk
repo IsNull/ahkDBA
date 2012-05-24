@@ -68,8 +68,8 @@ class DataBaseADO extends DBA.DataBase
 	/*
 		Querys the DB and returns a RecordSet
 	*/
-	OpenRecordSet(sql){
-		return new DBA.RecordSetADO(sql, this._connection)
+	OpenRecordSet(sql, editable = false){
+		return new DBA.RecordSetADO(sql, this._connection, editable)
 	}
 	
 	/*
@@ -121,7 +121,7 @@ class DataBaseADO extends DBA.DataBase
 			for field in adoRS.Fields
 				columnNames.add(field.Name)
 		
-			fetchedArray := adoRS.GetRows() ; returns a SafeArray wrapper
+			fetchedArray := adoRS.GetRows() ; returns a COM-SafeArray Wrapper
 			colSize := fetchedArray.MaxIndex(1) + 1
 			rowSize := fetchedArray.MaxIndex(2) + 1
 			
