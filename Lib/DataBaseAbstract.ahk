@@ -80,6 +80,22 @@ class Row
 		this._fields := fields
 		this._columns := columns
 	}
+    
+    __NewEnum() {
+        return new DBA.Row.Enumerator(this)
+    }
+    
+    class Enumerator {
+        __new(row) {
+            this.columnEnum := ObjNewEnum(row.columns)
+            this.fieldEnum := ObjNewEnum(row.fields)
+        }
+        
+        next(ByRef key, ByRef val) {
+            return this.columnEnum.next("", key)
+                && this.fieldEnum.next("",val)
+        }
+    }
 }
 
 /*
@@ -135,6 +151,10 @@ class Table
 		this.Rows := rows
 		this.Columns := columns
 	}
+    
+    __NewEnum() {
+        return ObjNewEnum(this.rows)
+    }
 }
 
 class DataBase
