@@ -37,10 +37,7 @@ class Collection
    Returns the count of elements contained in this collection
    */
    Count(){
-      i := 0
-      for e in this ; zählt alle Elemente
-         i++
-      return i
+      return this.SetCapacity(0)
    }
    
    /*
