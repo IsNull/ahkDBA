@@ -234,7 +234,7 @@ class DataBase
 	}
 	
 	Update(fields, constraints, tableName, safe = True){
-		throw Exception.MustOverride()
+		throw Exceptions.MustOverride()
 	}
 	
 	Close(){
