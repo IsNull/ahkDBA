@@ -15,7 +15,7 @@ Gui, Margin, 10, 10
 
 
 Gui, Add, Text, x10 w100 h20 0x200 , DB Connection, 
-Gui, Add, ComboBox, x+0 ym w400 vddDatabaseConnection, %A_ScriptDir%\TEST.DB||Server=localhost;Port=3306;Database=test;Uid=root;Pwd=toor;|Provider=Microsoft.Jet.OLEDB.4.0;Data Source=C:\Users\IsNull\Downloads\babbel\pas.mdb
+Gui, Add, ComboBox, x+0 ym w400 vddDatabaseConnection, %A_ScriptDir%\Test\TestDB.sqlite||Server=localhost;Port=3306;Database=test;Uid=root;Pwd=toor;|Provider=Microsoft.Jet.OLEDB.4.0;Data Source=%A_ScriptDir%\Test\TestDB.mdb
 Gui, Add, DropDownList, yp xp+420 w100 vddDatabaseType, % ArrayToGuiString(DBA.DataBaseFactory.AvaiableTypes, true)
 Gui, Add, Button, gReConnect yp xp+140 w80, .connect
 
