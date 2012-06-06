@@ -12,6 +12,9 @@ class DataBaseFactory
 			SQLite_Startup()
 			;//parse connection string. for now assume its a path to the requested DB
 			handle := SQLite_OpenDB(connectionString)
+			
+			if(handle == 0)
+				throw Exception("SQLite: The connection to the the given Datebase could not be etablished. Is the following SQLite connection string valid?`n`n" connectionString,-1) 
 			return new DBA.DataBaseSQLLite(handle)
 			
 		} if(dbType = "MySQL") {

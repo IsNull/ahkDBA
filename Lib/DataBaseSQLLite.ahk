@@ -23,6 +23,15 @@ class DataBaseSQLLite extends DBA.DataBase
 {
 	_handleDB := 0
 	
+	__New(handleDB){
+		this._handleDB := handleDB
+		if(!this.IsValid())
+		{
+			throw Exception("Can not create a DataBaseSQLLite instance, because the connection handle is not valid!")
+		}
+	}
+	
+	
 	Close(){
 		return SQLite_CloseDB(this._handleDB)
 	}
@@ -74,12 +83,26 @@ class DataBaseSQLLite extends DBA.DataBase
 		Querys the DB and returns a ResultTable or true/false
 	*/
 	Query(sql){
-		if (RegExMatch(sql, "i)^\s*SELECT\s")){
-			tbl := this._GetTableObj(sql)
-			return tbl
-		} else {
-		  return SQLite_Exec(this._handleDB, sql)
-		}
+		
+		ret := null
+		
+			if (RegExMatch(sql, "i)^\s*SELECT\s")){ ; check if this is a selection query
+				
+				try
+				{
+					ret := this._GetTableObj(sql)
+				}catch e
+					throw Exception("Select Query failed.`n`n" sql "`n`nChild Exception:`n" e.What " `n" e.Message, -1)
+			} else {
+				 
+				try
+				{
+					ret := SQLite_Exec(this._handleDB, sql)
+				}catch e
+					throw Exception("Non Selection Query failed.`n`n" sql "`n`nChild Exception:`n" e.What " `n" e.Message, -1)
+			}
+			
+		return ret
 	}
 	
 	EscapeString(str){
@@ -107,40 +130,41 @@ class DataBaseSQLLite extends DBA.DataBase
 		this.Query("ROLLBACK TRANSACTION;")
 	}
 	
-	__New(handleDB){
-		this._handleDB := handleDB
-	}
-	
 	InsertMany(records, tableName){
 		
 		if(!is(records, Collection) || records.IsEmpty())
 			return false
 		
-		sql := "INSERT INTO " tableName "`n"
-		colString := ""
-		
-		for column, value in records.First()
+		try
 		{
-			colstring .= this.QuoteIdentifier(column) ","
-		}
-		StringTrimRight, colstring, colstring, 1
-		sql .= "(" colstring ")`nVALUES`n"
-		
-		for each, record in records
-		{
-			valString := ""
-			for column, value in record
+			sql := "INSERT INTO " tableName "`n"
+			colString := ""
+			
+			for column, value in records.First()
 			{
-				valString .=  this.ToSqlLiteral(value) ","
+				colstring .= this.QuoteIdentifier(column) ","
 			}
-			StringTrimRight, valString, valString, 1
-			sql .= "(" valString "),`n"
-		}
-		StringTrimRight, colstring, colstring, 1
-		sql := Trim(sql," `t`r`n,") ";"
+			StringTrimRight, colstring, colstring, 1
+			sql .= "(" colstring ")`nVALUES`n"
+			
+			for each, record in records
+			{
+				valString := ""
+				for column, value in record
+				{
+					valString .=  this.ToSqlLiteral(value) ","
+				}
+				StringTrimRight, valString, valString, 1
+				sql .= "(" valString "),`n"
+			}
+			StringTrimRight, colstring, colstring, 1
+			sql := Trim(sql," `t`r`n,") ";"
+			
+			;FileAppend,`n---------`n%sql%`n, dba_sqlite_sql.log
+			return this.Query(sql)
+		}catch e
+			throw Exception("InsertMany failed.`n`nChild Exception:`n" e.What " `n" e.Message, -1)
 		
-		;FileAppend,`n---------`n%sql%`n, dba_sqlite_sql.log
-		return this.Query(sql)
 	}
 	
 	
@@ -153,6 +177,7 @@ class DataBaseSQLLite extends DBA.DataBase
 	
 	
 	_GetTableObj(sql, maxResult = -1) {
+		
 		err := 0, rc := 0, GetRows := 0
 		i := 0
 		rows := cols := 0
@@ -172,6 +197,7 @@ class DataBaseSQLLite extends DBA.DataBase
 		  maxResult := -1
 	   mytable := ""
 	   Err := 0
+
 	   _SQLite_StrToUTF8(SQL, UTF8)
 	   RC := DllCall("SQlite3\sqlite3_get_table", "Ptr", dbh, "Ptr", &UTF8, "Ptr*", mytable
 				   , "Ptr*", rows, "Ptr*", cols, "Ptr*", err, "Cdecl Int")
@@ -186,6 +212,8 @@ class DataBaseSQLLite extends DBA.DataBase
 		  return false
 	   }
 
+		
+
 	   if (maxResult = 0) {
 		  DllCall("SQLite3\sqlite3_free_table", "Ptr", mytable, "Cdecl")   
 		  If (ErrorLevel) {
@@ -194,6 +222,7 @@ class DataBaseSQLLite extends DBA.DataBase
 		  }
 		  Return True
 	   }
+	   
 	   if (maxResult = 1)
 		  GetRows := 0
 	   else if (maxResult > 1) && (maxResult < rows)

@@ -10,12 +10,14 @@ global initialSQL := "SELECT * FROM Test"
 global databaseType := ""
 currentDB := 0 ; current db connection
 
+connectionStrings := A_ScriptDir "\Test\TestDB.sqlite||Server=localhost;Port=3306;Database=test;Uid=root;Pwd=toor;|Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" A_ScriptDir "\Test\TestDB.mdb"
+
 Gui, +LastFound +OwnDialogs
 Gui, Margin, 10, 10
 
 
 Gui, Add, Text, x10 w100 h20 0x200 , DB Connection, 
-Gui, Add, ComboBox, x+0 ym w400 vddDatabaseConnection, %A_ScriptDir%\Test\TestDB.sqlite||Server=localhost;Port=3306;Database=test;Uid=root;Pwd=toor;|Provider=Microsoft.Jet.OLEDB.4.0;Data Source=%A_ScriptDir%\Test\TestDB.mdb
+Gui, Add, ComboBox, x+0 ym w400 vddDatabaseConnection, % connectionStrings
 Gui, Add, DropDownList, yp xp+420 w100 vddDatabaseType, % ArrayToGuiString(DBA.DataBaseFactory.AvaiableTypes, true)
 Gui, Add, Button, gReConnect yp xp+140 w80, .connect
 
@@ -44,18 +46,23 @@ ReConnect:
 	try {
 		
 		currentDB := DBA.DataBaseFactory.OpenDataBase(databaseType, connectionString)
-
-
-		if(databaseType = "SQLite"){
-			CreateTestDataSQLite(currentDB)
-		}else if(databaseType = "mySQL"){
-			CreateTestDataMySQL(currentDB)
-		}
-
-		TestInsert(currentDB)
+		
+		try {
+			if(databaseType = "SQLite"){
+				CreateTestDataSQLite(currentDB)
+			}else if(databaseType = "mySQL"){
+				CreateTestDataMySQL(currentDB)
+			}
+		}catch e
+			MsgBox,16, Error, % "Failed to create Test Data.`n`nException Detail:`n" e.What "`n"  e.Message
+		
+		
+		try {
+			TestInsert(currentDB)
+		}catch e
+			MsgBox,16, Error, % "Test of Recordset Insert failed!`n`nException Detail:`n" e.What "`n"  e.Message
 
 		GoSub, RunSQL
-
 	}
 	catch e
 		MsgBox,16, Error, % "Failed to create connection. Check your Connection string and DB Settings!`n`nException Detail:`n" e.What "`n"  e.Message
@@ -237,9 +244,11 @@ InsertTestData(db)
 		
 		
 		if (!db.Query(sQry)) {
-			  Msg := "ErrorLevel: " . ErrorLevel . "`n" . SQLite_LastError()
-			  MsgBox, 0, ERROR from EXEC, %Msg%
+			  Msg := "ErrorLevel: " . ErrorLevel . "`n" . SQLite_LastError() "`n`n" sQry
+			  FileAppend, %Msg%, sqliteTestQuery.log
+			  MsgBox, 0, Query failed, %Msg%
 		}
+		
 
 	}db.EndTransaction()
 }
