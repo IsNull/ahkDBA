@@ -35,3 +35,4 @@ _ReSharper*/
 *.zip
 *.DB
 clean.bat
+*.sqlite
