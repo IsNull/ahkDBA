@@ -287,6 +287,56 @@ SQLite_GetTable(DB, SQL, ByRef Rows, ByRef Cols, ByRef Names, ByRef Result, MaxR
    Return True
 }
 
+SQLite_Bind(query, idx, val, type = "auto") {
+    if type not in int,double,text,null
+        if val is integer
+            type = int
+        else if val is float
+            type = double
+        else if (val == DBA.Database.NULL)
+            type = null
+        else
+            type = text
+    if type = int
+        return SQLite_bind_int(query, idx, val)
+    if type = double
+        return SQLite_bind_double(query, idx, val)
+    if type = text
+        return SQLite_bind_text(query, idx, val)
+    if type = null
+        return SQLite_bind_null(query, idx)
+    return -1
+}
+
+SQLite_Bind_blob(query, idx, addr, bytes) {
+    return DllCall("SQLite3\sqlite3_bind_blob", "Ptr", Query, "int", idx, "ptr", addr, "int", bytes, "ptr", -1, "CDecl int") ; SQLITE_TRANSIENT = -1
+}
+
+SQLite_Bind_text(query, idx, text) {
+    static fn := "SQLite3\sqlite3_bind_text" (A_IsUnicode ? "16" : "")
+    return DllCall(fn, "ptr", Query, "int", idx, "ptr", &text, "int", StrLen(text) * (A_IsUnicode+1), "ptr", -1, "CDecl int") ; SQLITE_TRANSIENT = -1
+}
+
+SQLite_bind_double(query, idx, double) {
+    return DllCall("SQLite3\sqlite3_bind_double", "ptr", query, "int", idx, "double", double, "CDecl int")
+}
+
+SQLite_bind_int(query, idx, int) {
+    return DllCall("SQLite3\sqlite3_bind_int64", "ptr", query, "int", idx, "int64", int, "CDecl int")
+}
+
+SQLite_bind_null(query, idx) {
+    return DllCall("SQLite3\sqlite3_bind_null", "ptr", query, "int", idx, "CDecl int")
+}
+
+SQLite_Step(query) {
+    return DllCall("SQLite3\sqlite3_step", "ptr", query, "CDecl int")
+}
+
+SQLite_Reset(query) {
+    return DllCall("SQLite3\sqlite3_reset", "ptr", query, "CDecl int")
+}
+
 ;=======================================================================================================================
 ; Function Name:    SQLite_Exec()
 ; Description:      Executes a 'non query' SQLite statement, does not handle results.
