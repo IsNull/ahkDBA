@@ -1,11 +1,11 @@
 ﻿;namespace DBA
 
 /*
-	Represents a Connection to a SQLite Database
+	Represents a Connection to a ADO Database
 */
 class DataBaseADO extends DBA.DataBase
 {
-	_connection := 0
+	_connection := null
 	_connectionData := ""
 	
 	__New(connectionString){
@@ -28,8 +28,18 @@ class DataBaseADO extends DBA.DataBase
 	}
 	
 	Close(){
-		if(IsObject(this._connection))
+		if(this.IsConnected())
+		{
 			this._connection.Close()
+			this._connection := null
+		}
+	}
+	
+	/*
+	* Is this connection open?
+	*/
+	IsConnected(){
+		return (IsObject(this._connection) && this._connection.State != ADO.ObjectStateEnum.adStateClosed)
 	}
 	
 	IsValid(){
@@ -174,9 +184,7 @@ class DataBaseADO extends DBA.DataBase
 			}
 			rs.Update()
 		}
-		
-		
-		
+
 		rs.Close()
 	}
 	
