@@ -106,7 +106,7 @@ class DataBaseSQLLite extends DBA.DataBase
 	}
 	
 	EscapeString(str){
-		StringReplace, str, str, ', '', All ; replace all single quotes with double single-quotes. pascal escape
+		StringReplace, str, str, ', '', All ; replace all single quotes with double single-quotes. pascal escape'
 		return str
 	}
 	
@@ -131,42 +131,57 @@ class DataBaseSQLLite extends DBA.DataBase
 	}
 	
 	InsertMany(records, tableName){
-		
 		if(!is(records, Collection) || records.IsEmpty())
 			return false
 		
+		colString := ""
+		valString := ""
+		columns := {}
+		
+		for column, value in records.First()
+		{
+			colString .= "," this.QuoteIdentifier(column)
+			valString .= ",?"
+			columns[column] := A_Index
+		}
+		sql := "INSERT INTO " this.QuoteIdentifier(tableName) "`n(" SubStr(colstring, 2) ")`nVALUES`n(" SubStr(valString, 2) ")" 
+		
+		types := []
+		for i,row in this._GetTableObj("PRAGMA table_info(" this.QuoteIdentifier(tableName) ")").Rows
+		{
+			if columns.HasKey(row.name)
+				types[columns[row.name]] := row.types
+		}
+		
+		this.BeginTransaction()
+		
+		query := SQLite_Query(this._handleDB, sql) ;prepare the query
+		if ErrorLevel
+			msgbox % errorlevel
+		
 		try
 		{
-			sql := "INSERT INTO " tableName "`n"
-			colString := ""
-			
-			for column, value in records.First()
+			for i, record in records
 			{
-				colstring .= this.QuoteIdentifier(column) ","
-			}
-			StringTrimRight, colstring, colstring, 1
-			sql .= "(" colstring ")`nVALUES`n"
-			
-			for each, record in records
-			{
-				valString := ""
-				for column, value in record
+				for col, val in record
 				{
-					valString .=  this.ToSqlLiteral(value) ","
+					if (!columns.HasKey(col) || !types.HasKey(columns[col]))
+						throw "Irregular params"
+					SQLite_bind(query, columns[col], val, types[columns[col]])
 				}
-				StringTrimRight, valString, valString, 1
-				sql .= "(" valString "),`n"
+				SQLite_Step(query)
+				SQLite_Reset(query)
 			}
-			StringTrimRight, colstring, colstring, 1
-			sql := Trim(sql," `t`r`n,") ";"
-			
-			;FileAppend,`n---------`n%sql%`n, dba_sqlite_sql.log
-			return this.Query(sql)
-		}catch e
+		}
+		catch e
+		{
+			this.Rollback()
 			throw Exception("InsertMany failed.`n`nChild Exception:`n" e.What " `n" e.Message, -1)
-		
+		}
+		SQLite_QueryFinalize(query)
+		this.EndTransaction()
+		return True
 	}
-	
 	
 	Insert(record, tableName){
 		col := new Collection()
