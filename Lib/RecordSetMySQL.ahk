@@ -78,7 +78,7 @@ class RecordSetMySQL extends DBA.RecordSet
 		Loop % this._colCount
 		{
 			length := GetUIntAtAddress(lengths, A_Index - 1)
-			fieldPointer := GetUIntAtAddress(rowptr, A_Index - 1)
+			fieldPointer := GetPtrAtAddress(rowptr, A_Index - 1)
 			fieldValue := StrGet(fieldPointer, length, "CP0")
 			datafields.Add(fieldValue)
 		}
