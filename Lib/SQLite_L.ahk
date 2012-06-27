@@ -100,7 +100,7 @@ SQLite_Startup() {
          throw Exception("SQLite ERROR: Version " . ver .  " of SQLite3.dll is not supported!", -1)
       
       _SQLite_ModuleHandle(DLL)
-   }else
+   } else
       throw Exception("SQLite Dll not found:`n" . sqliteDllPath, -1)
   
    Return true
@@ -137,17 +137,17 @@ SQLite_OpenDB(DBFile) {
          throw Exception("ERROR: Could not find the SQLite3.dll!",-1)
    }
    
-	if (DBFile = "")
-	  DBFile := ":memory:"
-    else if (!IsFilePathValid(DBFile))
-      throw Exception("Filepath to the SQLite DB seems to be invalid.",-1)
+   if (DBFile = "")
+     DBFile := ":memory:"
+   else if (!SQLite_IsFilePathValid(DBFile))
+     throw Exception("Filepath to the SQLite DB seems to be invalid.",-1,DBFile)
     
    _SQLite_StrToUTF8(DBFile, UTF8)
    DB := 0
    RC := DllCall("SQlite3\sqlite3_open_v2", "Ptr", &UTF8, "Ptr*", DB, "UInt", flags, "Ptr", 0, "Cdecl Int")
 
    if (ErrorLevel) {
-	  throw Exception("ERROR: DLLCall sqlite3_open_v2 failed!",-1)
+     throw Exception("ERROR: DLLCall sqlite3_open_v2 failed!",-1)
    }
    if (RC) {
       if SQLite_ErrMsg(DB, Msg)
@@ -160,9 +160,15 @@ SQLite_OpenDB(DBFile) {
    Return DB
 }
 
-IsFilePathValid(path){
-   static regex_validatePath := "^(([a-zA-Z]:)|(\\))(\\{1}|((\\{1})[^\\]([^/:*?<>""|]*))+)$"
-   return RegExMatch(path, regex_validatePath)
+SQLite_IsFilePathValid(path) {
+   if FileExist(path) 
+      return true
+   if IsObject(FileOpen(path, "a"))
+   {
+      FileDelete, %path%
+      return true
+   }
+   return false
 }
 
 ;=======================================================================================================================
@@ -358,13 +364,13 @@ SQLite_Exec(DB, SQL) {
       
       if(!_SQLite_CheckDB(DB)){
          throw Exception("ERROR: Invalid database handle " DB "`nReturn Code: " _SQLite_ReturnCode("SQLITE_ERROR"),-1)
-      }else {
+      } else {
          _SQLite_StrToUTF8(SQL, UTF8)
          Err := 0
          RC := DllCall("SQlite3\sqlite3_exec", "Ptr", DB, "Ptr", &UTF8, "Ptr", 0, "Ptr", 0, "Ptr*", Err, "Cdecl Int")
          if (ErrorLevel) {
             throw Exception("DLLCall sqlite3_exec failed!",-1)
-         }else{
+         } else {
             if (RC) {
                
                SQLite_LastError(StrGet(Err, "UTF-8"))
@@ -373,17 +379,17 @@ SQLite_Exec(DB, SQL) {
                {
                   DllCall("SQLite3\sqlite3_free", "Ptr", Err)
                   ErrorLevel := RC
-               }catch e
+               } catch e
                {
                    ;throw Exception("sqlite3_free failed.`n`nErr:" Err "`n`nChild Exception:`n" e.What " `n" e.Message, -1)
                    ; just igonre for now
                }
 
-            }else
+            } else
                ret := true
          }
       }
-   }catch e
+   } catch e
      throw Exception("SQLite_Exec failed.`n`n" sql "`n`nChild Exception:`n" e.What " `n" e.Message, -1)
 
    return ret
@@ -634,7 +640,7 @@ SQLite_SQLiteExe(DBFile, Commands, ByRef Output) {
       SQLite_LastError("ERROR: Unable to create " . InputFile . "!")
       Return False
    }
-   Cmd = ""%SQLiteExe%" "%DBFile%" < "%InputFile%" > "%OutputFile%""
+   Cmd = ""%SQLiteExe%" "%DBFile%" < "%InputFile%" > "%OutputFile%"" ;"
       
    RunWait %comspec% /c %Cmd%, , Hide UseErrorLevel
    if (Errorlevel) {
@@ -1005,7 +1011,7 @@ _SQLite_CheckQuery(Query, DB = "") {
 ; Description:      Returns numeric RC for literal RC
 ;=======================================================================================================================
 _SQLite_ReturnCode(RC) {
-   Static RCTXT := {SQLITE_OK: 0          ; Successful result
+   Static RCTXT :={ SQLITE_OK: 0          ; Successful result
                   , SQLITE_ERROR: 1       ; SQL error or missing database
                   , SQLITE_INTERNAL: 2    ; NOT USED. Internal logic error in SQLite
                   , SQLITE_PERM: 3        ; Access permission denied
