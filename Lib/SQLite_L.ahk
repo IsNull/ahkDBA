@@ -251,7 +251,7 @@ SQLite_GetTable(DB, SQL, ByRef Rows, ByRef Cols, ByRef Names, ByRef Result, MaxR
    }
    if (RC) {
       SQLite_LastError(StrGet(Err, "UTF-8"))
-      DllCall("SQLite3\sqlite3_free", "Ptr", Err)
+      DllCall("SQLite3\sqlite3_free", "Ptr", Err, "cdecl")
       ErrorLevel := RC
       Return False
    }
@@ -377,7 +377,7 @@ SQLite_Exec(DB, SQL) {
                
                try
                {
-                  DllCall("SQLite3\sqlite3_free", "Ptr", Err)
+                  DllCall("SQLite3\sqlite3_free", "Ptr", Err, "cdecl")
                   ErrorLevel := RC
                } catch e
                {
