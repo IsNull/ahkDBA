@@ -91,14 +91,14 @@ class DataBaseSQLLite extends DBA.DataBase
 				try
 				{
 					ret := this._GetTableObj(sql)
-				}catch e
-					throw Exception("Select Query failed.`n`n" sql "`n`nChild Exception:`n" e.What " `n" e.Message, -1)
+				} catch e
+					throw Exception("Select Query failed.`n`n" sql "`n`nChild Exception:`n" e.What "`n" e.Message "`n" e.File "@" e.Line, -1)
 			} else {
 				 
 				try
 				{
 					ret := SQLite_Exec(this._handleDB, sql)
-				}catch e
+				} catch e
 					throw Exception("Non Selection Query failed.`n`n" sql "`n`nChild Exception:`n" e.What " `n" e.Message, -1)
 			}
 			
@@ -222,7 +222,7 @@ class DataBaseSQLLite extends DBA.DataBase
 	   }
 	   If (rc) {
 		  SQLite_LastError(StrGet(err, "UTF-8"))
-		  DllCall("SQLite3\sqlite3_free", "Ptr", err)
+		  DllCall("SQLite3\sqlite3_free", "Ptr", err, "cdecl")
 		  ErrorLevel := rc
 		  return false
 	   }
