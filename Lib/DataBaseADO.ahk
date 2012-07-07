@@ -90,11 +90,14 @@ class DataBaseADO extends DBA.DataBase
 		if(this.IsValid())
 		{
 			;Execute( commandtext,ra,options)
-			rs := this._connection.Execute(sql)
-			if(IsObject(rs))
+			affectedRows := 0
+			rs := this._connection.Execute(sql, affectedRows)
+			if(IsObject(rs) && rs.State != ADO.ObjectStateEnum.adStateClosed)
 			{
 				ret := this.FetchADORecordSet(rs)
 				rs.Close()
+			}else{
+				ret := affectedRows
 			}
 		}
 		return ret
