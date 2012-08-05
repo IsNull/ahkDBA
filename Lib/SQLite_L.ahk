@@ -864,7 +864,7 @@ SQLite_LastError(Error = "") {
 ; Return Value:     Path to SQLite DLL
 ;=======================================================================================================================
 
-SQLite_DLLPath(path = "") {
+SQLite_DLLPath(forcedPath = "") {
    static DLLPath := ""
    static dllname := "SQLite3.dll"
 
@@ -879,8 +879,8 @@ SQLite_DLLPath(path = "") {
          DLLPath := A_ScriptDir . "\Lib\" . dllpath
    }
    
-   if (path != "")
-      DLLPath := Path
+   if (forcedPath != "")
+      DLLPath := forcedPath
 
    return DLLPath
 }
@@ -895,7 +895,7 @@ SQLite_DLLPath(path = "") {
 ; Parameter(s):     Optional Path - Path for SQLite3.exe
 ; Return Value:     Path to SQLite DLL
 ;=======================================================================================================================
-SQLite_EXEPath(path = "") {
+SQLite_EXEPath(forcedPath = "") {
    static EXEPath := ""
    
    if (EXEPath == ""){
@@ -904,8 +904,8 @@ SQLite_EXEPath(path = "") {
       else if (FileExist(A_ScriptDir . "\Lib\SQLite3.exe"))
          EXEPath := A_ScriptDir . "\Lib\SQLite3.exe"
    }
-   if (path != "")
-      EXEPath := Path
+   if (forcedPath != "")
+      EXEPath := forcedPath
    Return EXEPath
 }
 ;=======================================================================================================================

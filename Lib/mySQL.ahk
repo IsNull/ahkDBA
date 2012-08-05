@@ -58,7 +58,7 @@ MySQL_StartUp(){
       return hModule
 }
 
-MySQL_DLLPath(path = "") {
+MySQL_DLLPath(forcedPath = "") {
    static DLLPath := ""
    static dllname := "libmySQL.dll"
 
@@ -73,8 +73,8 @@ MySQL_DLLPath(path = "") {
          DLLPath := A_ScriptDir . "\Lib\" . dllpath
    }
    
-   if (path != "")
-      DLLPath := Path
+   if (forcedPath != "")
+      DLLPath := forcedPath
 
    return DLLPath
 }
