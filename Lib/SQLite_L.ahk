@@ -83,6 +83,19 @@
 ;                   On Failure - False
 ;=======================================================================================================================
 */
+#Include <Base>
+#Include <MemoryBuffer>
+
+class SQLiteDataType
+{
+   static SQLITE_INTEGER := 1
+   static SQLITE_FLOAT  :=  2
+   static SQLITE_BLOB :=  4
+   static SQLITE_NULL :=  5
+   static SQLITE_TEXT := 3
+}
+
+
 SQLite_Startup() {
    Static MinVersion := "35"
    
@@ -294,28 +307,51 @@ SQLite_GetTable(DB, SQL, ByRef Rows, ByRef Cols, ByRef Names, ByRef Result, MaxR
 }
 
 SQLite_Bind(query, idx, val, type = "auto") {
-    if type not in int,double,text,null
-        if val is integer
-            type = int
-        else if val is float
-            type = double
-        else if (val == DBA.Database.NULL)
-            type = null
-        else
-            type = text
-    if type = int
-        return SQLite_bind_int(query, idx, val)
-    if type = double
-        return SQLite_bind_double(query, idx, val)
-    if type = text
-        return SQLite_bind_text(query, idx, val)
-    if type = null
-        return SQLite_bind_null(query, idx)
+   if(type = "" || type = "auto")
+   {
+      if val is integer
+         type := "int"
+      else if val is float
+         type := "double"
+      else if (val == DBA.Database.NULL)
+         type := "null"
+      else if (is(val, MemoryBuffer))
+         type := "blob"
+      else if (IsObject(val)){
+         ; Probably support here any kind of serialisation support
+         ; e.g. serialize the object with yaml/json
+         ; for now, just try to turn it into a default string
+         val := val.ToString()
+         type := "text"
+      }
+      else
+         type := "text"
+   }
+   
+   MsgBox % "type is" type
+   
+
+   if (type = "int" || type = "Integer")
+      return SQLite_bind_int(query, idx, val)
+   if (type = "double")
+      return SQLite_bind_double(query, idx, val)
+   if (type = "text")
+      return SQLite_bind_text(query, idx, val)
+   if (type = "blob"){
+      if(is(val, MemoryBuffer)){
+         MsgBox % "binding blob, adr: "  val.GetPtr() " size: " val.Size
+         return SQLite_Bind_blob(query, idx, val.GetPtr(), val.Size) ; val is a MemoryBuffer
+      }else
+         throw Exception("You can only store MemorBuffers as BLOB.")
+   }
+   if (type = "null")
+      return SQLite_bind_null(query, idx)
+   
     return -1
 }
 
 SQLite_Bind_blob(query, idx, addr, bytes) {
-    return DllCall("SQLite3\sqlite3_bind_blob", "Ptr", Query, "int", idx, "ptr", addr, "int", bytes, "ptr", -1, "CDecl int") ; SQLITE_TRANSIENT = -1
+    return DllCall("SQLite3\sqlite3_bind_blob", Ptr, Query, "int", idx, Ptr, addr, int, bytes, Ptr, -1, "CDecl int") ; SQLITE_TRANSIENT = -1
 }
 
 SQLite_Bind_text(query, idx, text) {
@@ -479,7 +515,6 @@ SQLite_FetchNames(Query, ByRef Names) {
 ;                                For additional error message call SQLite_LastError()
 ;=======================================================================================================================
 SQLite_FetchData(Query, ByRef Row) {
-   Static SQLITE_NULL := 5
    SQLite_LastError(" ")
    Row := ""
    if (Query = -1)
@@ -504,26 +539,38 @@ SQLite_FetchData(Query, ByRef Row) {
       ErrorLevel := RC
       Return False
    }
-   RC := DllCall("SQlite3\sqlite3_data_count", "Ptr", Query, "Cdecl Int")
+   rowCount := DllCall("SQlite3\sqlite3_data_count", "Ptr", Query, "Cdecl Int")
    if (ErrorLevel) {
       SQLite_LastError("ERROR: DLLCall sqlite3_data_count failed!")
       Return False
    }
-   if (RC < 1) {
+   if (rowCount < 1) {
       SQLite_LastError("ERROR: Query result is empty!")
       ErrorLevel := _SQLite_ReturnCode("SQLITE_EMPTY")
       Return False
    }
    Row := Array()
-   Loop, %RC% {
+   Loop, %rowCount% {
       CType := DllCall("SQlite3\sqlite3_column_type", "Ptr", Query, "Int", A_Index - 1, "Cdecl Int")
       if (ErrorLevel) {
          SQLite_LastError("ERROR: DLLCall sqlite3_column_type failed!")
          Return False
       }
-      if (CType = SQLITE_NULL) {
+      if (CType == SQLiteDataType.SQLITE_NULL) {
          Row[A_Index] := ""
-      } Else {
+      }else if(CType == SQLiteDataType.SQLITE_BLOB){
+         
+         ; // sqlite3_column_bytes(sqlite3_stmt*, int iCol)
+         blobSize := DllCall("SQlite3\sqlite3_column_bytes", "Ptr", Query, "Int", A_Index -1, "Cdecl UInt")
+         ; // sqlite3_column_blob(sqlite3_stmt*, int iCol)
+         blobPtr := DllCall("SQlite3\sqlite3_column_blob", "Ptr", Query, "Int", A_Index - 1, "Cdecl Ptr")
+         
+         memBuf := new MemoryBuffer()
+         memBuf.Create( blobPtr, blobSize )
+         
+         Row[A_Index] := memBuf
+         
+      } else {
          StrPtr := DllCall("SQlite3\sqlite3_column_text", "Ptr", Query, "Int", A_Index - 1, "Cdecl Ptr")
          if (ErrorLevel) {
             SQLite_LastError("ERROR: DLLCall sqlite3_column_text failed!")
@@ -532,8 +579,20 @@ SQLite_FetchData(Query, ByRef Row) {
          Row[A_Index] := StrGet(StrPtr, "UTF-8")
       }
    }
-   Return RC
+   Return rowCount
 }
+
+/*
+class SQLiteDataType
+{
+   static SQLITE_INTEGER := 1
+   static SQLITE_FLOAT  :=  2
+   static SQLITE_BLOB :=  4
+   static SQLITE_NULL :=  5
+   static SQLITE_TEXT := 3
+}
+*/
+
 ;=======================================================================================================================
 ; Function Name:    SQLite_QueryFinalize()
 ; Description:      Finalizes SQLite_Query() based query,

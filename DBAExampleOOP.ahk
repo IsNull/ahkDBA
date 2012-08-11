@@ -31,14 +31,17 @@ Gui, Add, Text, xm h20 w100 0x200, Table name:
 Gui, Add, GroupBox, xm w780 h330 , Results
 Gui, Add, ListView, xp+10 yp+18 w760 h300 vResultsLV,
 Gui, Add, Button, gTestRecordSetClick, [Test RecordSet]
+Gui, Add, Button, gTestBinaryBlobClick, [Test Binary Blob]
 Gui, Add, StatusBar,
 Gui, Show, , sqlite test oop
 
 return
 
 
+
 ReConnect:
 	Gui, submit, NoHide
+	DoTestInserts := false
 	
 	databaseType := ddDatabaseType
 	connectionString := ddDatabaseConnection
@@ -47,20 +50,23 @@ ReConnect:
 		
 		currentDB := DBA.DataBaseFactory.OpenDataBase(databaseType, connectionString)
 		
-		try {
-			if(databaseType = "SQLite"){
-				CreateTestDataSQLite(currentDB)
-			}else if(databaseType = "mySQL"){
-				CreateTestDataMySQL(currentDB)
-			}
-		}catch e
-			MsgBox,16, Error, % "Failed to create Test Data.`n`nException Detail:`n" e.What "`n"  e.Message
+		if(DoTestInserts)
+		{
+			try {
+				if(databaseType = "SQLite"){
+					CreateTestDataSQLite(currentDB)
+				}else if(databaseType = "mySQL"){
+					CreateTestDataMySQL(currentDB)
+				}
+			}catch e
+				MsgBox,16, Error, % "Failed to create Test Data.`n`nException Detail:`n" e.What "`n"  e.Message
+			
+			try {
+				TestInsert(currentDB)
+			}catch e
+				MsgBox,16, Error, % "Test of Recordset Insert failed!`n`nException Detail:`n" e.What "`n"  e.Message
+		}
 		
-		
-		try {
-			TestInsert(currentDB)
-		}catch e
-			MsgBox,16, Error, % "Test of Recordset Insert failed!`n`nException Detail:`n" e.What "`n"  e.Message
 
 		GoSub, RunSQL
 	}
@@ -75,6 +81,13 @@ TestRecordSetClick:
 	Gui, submit, NoHide
 	TestRecordSet(currentDB, SQL)
 return
+
+TestBinaryBlobClick:
+	Gui, submit, NoHide
+	TestBinaryBLob(currentDB)
+	
+return
+
 
 GuiClose:
 	if(IsObject(currentDB))
@@ -161,6 +174,27 @@ TestRecordSet(db, sQry){
 	MsgBox done :)
 }
 
+TestBinaryBLob(db){
+	imagePath := "C:\bin\Chrysanthemum.jpg"
+
+	if(!IsObject(db))
+		throw Exception("ArgumentExcpetion: db must be a DBA DataBase Object")
+	
+	imgBuffer := new MemoryBuffer()
+	imgBuffer.CreateFormFile(imagePath)
+	
+	;MsgBox % imgBuffer.ToString()
+	;imgBuffer.WriteToFile(A_ScriptDir "\hui.jpg")
+	
+	record := {}
+	record.Name  := "Test Image"
+	;record.Image := imgBuffer
+		
+	db.Insert(record, "ImageTest") ; Insert this record into Table 'ImageTest'
+	
+	imgBuffer.Free()
+}
+
 ShowTable(listView, table){
 	
 	GuiControl, -ReDraw, %listView%
@@ -194,6 +228,8 @@ CreateTestDataSQLite(db){
 		SB_SetText("Create Test Data")
 		
 		db.Query("CREATE TABLE Test (Name, Fname, Phone, Room, PRIMARY KEY(Name ASC, FName ASC));")
+		
+		db.Query("CREATE TABLE TestImage (Name, Image BLOB, PRIMARY KEY(Name ASC));")
 		
 		InsertTestData(db)
 	}catch{

@@ -146,12 +146,16 @@ class DataBaseSQLLite extends DBA.DataBase
 		}
 		sql := "INSERT INTO " this.QuoteIdentifier(tableName) "`n(" SubStr(colstring, 2) ")`nVALUES`n(" SubStr(valString, 2) ")" 
 		
+		
 		types := []
 		for i,row in this._GetTableObj("PRAGMA table_info(" this.QuoteIdentifier(tableName) ")").Rows
 		{
-			if columns.HasKey(row.name)
+			if (columns.HasKey(row.name)){
+				;MsgBox,0,Error,  % "row name found: " row.name "`nTypes: " row.type  ; #DEBUG
 				types[columns[row.name]] := row.types
+			}
 		}
+		
 		
 		this.BeginTransaction()
 		
@@ -165,9 +169,14 @@ class DataBaseSQLLite extends DBA.DataBase
 			{
 				for col, val in record
 				{
-					if (!columns.HasKey(col) || !types.HasKey(columns[col]))
-						throw "Irregular params"
-					SQLite_bind(query, columns[col], val, types[columns[col]])
+					if (!columns.HasKey(col))
+						throw Exception("Irregular params: Column not found: [" col "] in`nTable Columns:" this.printKeys(columns))
+					fieldType := "auto"
+					if(types.HasKey(columns[col]))
+						fieldType := types[columns[col]]
+					
+					ret := SQLite_bind(query, columns[col], val, fieldType)
+					;MsgBox % " bind returned " ret
 				}
 				SQLite_Step(query)
 				SQLite_Reset(query)
@@ -181,6 +190,15 @@ class DataBaseSQLLite extends DBA.DataBase
 		SQLite_QueryFinalize(query)
 		this.EndTransaction()
 		return True
+	}
+	
+	printKeys(arr){
+		str := ""
+		for key, val in arr
+		{
+			str .= key ","
+		}
+		return str
 	}
 	
 	Insert(record, tableName){
