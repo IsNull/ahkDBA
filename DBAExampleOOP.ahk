@@ -159,23 +159,8 @@ TestInsert(mydb){
 	mydb.InsertMany(records, "Test")
 }
 
-
-TestRecordSet(db, sQry){
-	rs := db.OpenRecordSet(sQry)
-	while(!rs.EOF){	
-		name := rs["Name"] 
-		phone := rs["Phone"]
-
-		MsgBox %name% %phone%
-		rs.Update()
-		rs.MoveNext()
-	}
-	rs.Close()
-	MsgBox done :)
-}
-
 TestBinaryBLob(db){
-	imagePath := "C:\bin\Chrysanthemum.jpg"
+	static imagePath := A_scriptdir "\Test\boom.png"
 
 	if(!IsObject(db))
 		throw Exception("ArgumentExcpetion: db must be a DBA DataBase Object")
@@ -193,6 +178,22 @@ TestBinaryBLob(db){
 	db.Insert(record, "ImageTest") ; Insert this record into Table 'ImageTest'
 	
 	imgBuffer.Free()
+}
+
+
+
+TestRecordSet(db, sQry){
+	rs := db.OpenRecordSet(sQry)
+	while(!rs.EOF){	
+		name := rs["Name"] 
+		phone := rs["Phone"]
+
+		MsgBox %name% %phone%
+		rs.Update()
+		rs.MoveNext()
+	}
+	rs.Close()
+	MsgBox done :)
 }
 
 ShowTable(listView, table){
