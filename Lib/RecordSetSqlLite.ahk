@@ -22,8 +22,7 @@ class RecordSetSqlLite extends DBA.RecordSet
 		Returns an Array with all Column Names
 	*/
 	getColumnNames(){
-		SQLite_FetchNames(this._query, names)
-		return new Collection(names)
+		return this._colNames
 	}
 		
 	getEOF(){
@@ -32,7 +31,6 @@ class RecordSetSqlLite extends DBA.RecordSet
 	
 	
 	MoveNext() {	
-		;static SQLITE_NULL := 5
 		static EOR := -1
 		
 		this.ErrorMsg := ""
@@ -95,7 +93,7 @@ class RecordSetSqlLite extends DBA.RecordSet
 				fields[A_Index] := StrGet(strPtr, "UTF-8")
 			}
 		}
-		this._currentRow := new DBA.Row(this._colNames, fields)
+		this._currentRow := new DBA.Row(this.getColumnNames(), fields)
 		this.CurrentRow++
 		return true
 	}
@@ -146,9 +144,13 @@ class RecordSetSqlLite extends DBA.RecordSet
 		}
 		this._db := db
 		this._query := query
+		
 		if(query != 0){
-			this._colNames := this.getColumnNames()
-			this.MoveNext()
+			
+			SQLite_FetchNames(this._query, names)
+			this._colNames := new Collection(names)
+			
+			this.MoveNext() ; move to the first record
 		}
 	}
 }

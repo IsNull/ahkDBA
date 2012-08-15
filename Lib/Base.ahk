@@ -5,7 +5,6 @@
 
 global null := 0	; for better readability
 
-
 /*
 	Check for same (base) Type
 */
@@ -24,6 +23,9 @@ is(obj, type){
 	return false
 }
 
+/*
+* Returns the type of the given Object
+*/
 typeof(obj){
 	if(IsObject(obj)){
 		cls := obj.__Class
@@ -41,6 +43,37 @@ typeof(obj){
 	}
 	return "NonObject"
 }
+
+inheritancePath( obj ){
+	itree := []
+
+	if(IsObject(obj)){
+		
+		ipath := "inheritance tree:`n`n"  
+		
+		while(IsObject(obj := obj.base)){
+			itree[A_index] := (Trim(obj.__Class) != "") ? obj.__Class : "{}"
+		}
+		cnt := itree.MaxIndex()
+		for i,cls in itree
+		{
+			j := cnt - (i - 1)
+			ipath .= itree[j]	
+			
+			if(i < cnt)
+			{
+				ipath .= "`n"
+				loop % i
+					ipath .= "   " 
+				ipath .= ">"
+			}
+		}
+	}else
+		ipath := "NonObject"
+		
+	return ipath
+}
+
 
 IsObjectMember(obj, memberStr){
 	if(IsObject(obj)){

@@ -3,6 +3,8 @@
 SetWorkingDir %A_ScriptDir% 
 #Include <DBA>
 
+
+
 global initialSQL := "SELECT * FROM Test"
 global databaseType := ""
 currentDB := null ; current db connection
@@ -48,6 +50,8 @@ ReConnect:
 
 	try {
 		currentDB := DBA.DataBaseFactory.OpenDataBase(databaseType, connectionString)
+		
+		;MsgBox % inheritancePath(currentDB)
 		
 		if(DoTestInserts)
 		{
@@ -131,10 +135,9 @@ RunSQL:
 			}
 			*/
 			
-			rs := db.OpenRecordSet(SQL)
-			
-
-			
+			rs := currentDB.OpenRecordSet(SQL)
+			if(IsObject(rs))
+				ShowRecordSet("ResultsLV", rs)
 			
 			
 		} catch e
@@ -245,8 +248,6 @@ TestReadBinaryBlobAndWriteToDisk(db){
 	
 }
 
-
-
 TestRecordSet(db, sQry){
 	rs := db.OpenRecordSet(sQry)
 	while(!rs.EOF){	
@@ -254,13 +255,14 @@ TestRecordSet(db, sQry){
 		phone := rs["Phone"]
 
 		MsgBox %name% %phone%
-		rs.Update()
+		;rs.Update()
 		rs.MoveNext()
 	}
 	rs.Close()
 	MsgBox done :)
 }
 
+/*
 ShowTable(listView, table){
 	
 	GuiControl, -ReDraw, %listView%
@@ -286,19 +288,40 @@ ShowTable(listView, table){
 	LV_ModifyCol()
 	GuiControl, +ReDraw, %listView%
 }
+*/
 
-ShowRecordSet(rs){
+ShowRecordSet( listView, rs ){
+	
+	GuiControl, -ReDraw, %listView%
+	Gui, ListView, %listView%
+	
+	MsgBox % inheritancePath( rs )
+	if(!is(rs, DBA.RecordSet))
+		throw Exception("RecordSet Object expected!",-1)
+	
+	; Delete existing data
+	LV_Delete()
+	Loop, % LV_GetCount("Column")
+	   LV_DeleteCol(1)
+	
+	; fetch new data
+	columns := rs.getColumnNames()
+	columnCount := columns.Count()
+	
+	for each, colName in columns
+		LV_InsertCol(A_Index,"", colName)
+	
 	
 	while(!rs.EOF){	
-		name := rs["Name"] 
-		phone := rs["Phone"]
-
-		MsgBox %name% %phone%
-		rs.Update()
+		;name := rs["Name"] 
+		;phone := rs["Phone"]
+		rowNum := LV_Add("", "")
+		Loop, % columnCount
+			LV_Modify(rowNum, "Col" . A_index, rs[A_index])
 		rs.MoveNext()
 	}
-	rs.Close()
-	
+	LV_ModifyCol()
+	GuiControl, +ReDraw, %listView%
 }
 
 
