@@ -36,3 +36,4 @@ _ReSharper*/
 *.DB
 clean.bat
 *.sqlite
+Test/boomFromDb.png

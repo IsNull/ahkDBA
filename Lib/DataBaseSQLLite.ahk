@@ -29,10 +29,12 @@ class DataBaseSQLLite extends DBA.DataBase
 		{
 			throw Exception("Can not create a DataBaseSQLLite instance, because the connection handle is not valid!")
 		}
+		ArchLogger.Log("New DataBaseSQLLite: Handle @" handleDB)
 	}
 	
 	
 	Close(){
+		;ArchLogger.Log("DataBaseSQLLite: Close DB Handle @" handleDB)
 		return SQLite_CloseDB(this._handleDB)
 	}
 	
@@ -207,8 +209,9 @@ class DataBaseSQLLite extends DBA.DataBase
 		return this.InsertMany(col, tableName)
 	}
 	
-	
-	
+	/*
+		deprecated
+	*/
 	_GetTableObj(sql, maxResult = -1) {
 		
 		err := 0, rc := 0, GetRows := 0
@@ -216,34 +219,34 @@ class DataBaseSQLLite extends DBA.DataBase
 		rows := cols := 0
 		names := new Collection()
 		dbh := this._handleDB
-		
-		SQLite_LastError(" ")
-	
-	   if(!_SQLite_CheckDB(dbh)) {
-		  SQLite_LastError("ERROR: Invalid database handle " . dbh)
-		  ErrorLevel := _SQLite_ReturnCode("SQLITE_ERROR")
-		  return False
-	   }
-	   if maxResult Is Not Integer
-		  maxResult := -1
-	   if (maxResult < -1)
-		  maxResult := -1
-	   mytable := ""
-	   Err := 0
 
-	   _SQLite_StrToUTF8(SQL, UTF8)
-	   RC := DllCall("SQlite3\sqlite3_get_table", "Ptr", dbh, "Ptr", &UTF8, "Ptr*", mytable
+		SQLite_LastError(" ")
+
+		if(!_SQLite_CheckDB(dbh)) {
+			SQLite_LastError("ERROR: Invalid database handle " . dbh)
+			ErrorLevel := _SQLite_ReturnCode("SQLITE_ERROR")
+			return False
+		}
+
+		if (maxResult < -1)
+			maxResult := -1
+		mytable := ""
+		Err := 0
+		
+		_SQLite_StrToUTF8(SQL, UTF8)
+		RC := DllCall("SQlite3\sqlite3_get_table", "Ptr", dbh, "Ptr", &UTF8, "Ptr*", mytable
 				   , "Ptr*", rows, "Ptr*", cols, "Ptr*", err, "Cdecl Int")
-	   If (ErrorLevel) {
+				   
+		If (ErrorLevel) {
 		  SQLite_LastError("ERROR: DLLCall sqlite3_get_table failed!")
 		  Return False
-	   }
-	   If (rc) {
+		}
+		If (rc) {
 		  SQLite_LastError(StrGet(err, "UTF-8"))
 		  DllCall("SQLite3\sqlite3_free", "Ptr", err, "cdecl")
 		  ErrorLevel := rc
 		  return false
-	   }
+		}
 
 		
 

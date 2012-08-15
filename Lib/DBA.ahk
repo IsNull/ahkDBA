@@ -3,6 +3,7 @@
 */
 
 #Include <Base>
+#Include <ArchLogger>
 #Include <MemoryBuffer>
 #Include <Collection>
 

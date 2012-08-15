@@ -328,7 +328,7 @@ SQLite_Bind(query, idx, val, type = "auto") {
          type := "text"
    }
    
-   MsgBox % "type is" type
+   ArchLogger.Log(A_ThisFunc ": Binding value as: " type)
    
 
    if (type = "int" || type = "Integer")
@@ -505,93 +505,6 @@ SQLite_FetchNames(Query, ByRef Names) {
    }
    Return True
 }
-;=======================================================================================================================
-; Function Name:    SQLite_FetchData()
-; Description:      Fetches next row of data from a SQLite_Query() based query
-; Parameter(s):     Query - Query handle, -1 for last prepared query
-;                   ByRef Row - Passes out an array containing the column values of one row of data
-; Return Value(s):  On Success - Number of columns, -1 on end of data
-;                   On Failure - False, check ErrorLevel for details
-;                                For additional error message call SQLite_LastError()
-;=======================================================================================================================
-SQLite_FetchData(Query, ByRef Row) {
-   SQLite_LastError(" ")
-   Row := ""
-   if (Query = -1)
-      Query := _SQLite_CurrentQuery()
-   if !(DB := _SQLite_CheckQuery(Query)) {
-      SQLite_LastError("ERROR: Invalid query handle " . Query)
-      ErrorLevel := _SQLite_ReturnCode("SQLITE_ERROR")
-      Return False
-   }
-   RC := DllCall("SQlite3\sqlite3_step", "Ptr", Query, "Cdecl Int")
-   if (ErrorLevel) {
-      SQLite_LastError("ERROR: DLLCall sqlite3_step failed!")
-      Return False
-   }
-   if (RC <> _SQLite_ReturnCode("SQLITE_ROW")) {
-      if (RC = _SQLite_ReturnCode("SQLITE_DONE")) {
-         Return -1
-      }
-      SQLite_QueryFinalize(Query)
-      if SQLite_ErrMsg(DB, Msg)
-         SQLite_LastError(Msg)
-      ErrorLevel := RC
-      Return False
-   }
-   rowCount := DllCall("SQlite3\sqlite3_data_count", "Ptr", Query, "Cdecl Int")
-   if (ErrorLevel) {
-      SQLite_LastError("ERROR: DLLCall sqlite3_data_count failed!")
-      Return False
-   }
-   if (rowCount < 1) {
-      SQLite_LastError("ERROR: Query result is empty!")
-      ErrorLevel := _SQLite_ReturnCode("SQLITE_EMPTY")
-      Return False
-   }
-   Row := Array()
-   Loop, %rowCount% {
-      CType := DllCall("SQlite3\sqlite3_column_type", "Ptr", Query, "Int", A_Index - 1, "Cdecl Int")
-      if (ErrorLevel) {
-         SQLite_LastError("ERROR: DLLCall sqlite3_column_type failed!")
-         Return False
-      }
-      if (CType == SQLiteDataType.SQLITE_NULL) {
-         Row[A_Index] := ""
-      }else if(CType == SQLiteDataType.SQLITE_BLOB){
-         
-         ; // sqlite3_column_bytes(sqlite3_stmt*, int iCol)
-         blobSize := DllCall("SQlite3\sqlite3_column_bytes", "Ptr", Query, "Int", A_Index -1, "Cdecl UInt")
-         ; // sqlite3_column_blob(sqlite3_stmt*, int iCol)
-         blobPtr := DllCall("SQlite3\sqlite3_column_blob", "Ptr", Query, "Int", A_Index - 1, "Cdecl Ptr")
-         
-         memBuf := new MemoryBuffer()
-         memBuf.Create( blobPtr, blobSize )
-         
-         Row[A_Index] := memBuf
-         
-      } else {
-         StrPtr := DllCall("SQlite3\sqlite3_column_text", "Ptr", Query, "Int", A_Index - 1, "Cdecl Ptr")
-         if (ErrorLevel) {
-            SQLite_LastError("ERROR: DLLCall sqlite3_column_text failed!")
-            Return False
-         }
-         Row[A_Index] := StrGet(StrPtr, "UTF-8")
-      }
-   }
-   Return rowCount
-}
-
-/*
-class SQLiteDataType
-{
-   static SQLITE_INTEGER := 1
-   static SQLITE_FLOAT  :=  2
-   static SQLITE_BLOB :=  4
-   static SQLITE_NULL :=  5
-   static SQLITE_TEXT := 3
-}
-*/
 
 ;=======================================================================================================================
 ; Function Name:    SQLite_QueryFinalize()

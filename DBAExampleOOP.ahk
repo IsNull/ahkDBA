@@ -3,12 +3,9 @@
 SetWorkingDir %A_ScriptDir% 
 #Include <DBA>
 
-
-
-
 global initialSQL := "SELECT * FROM Test"
 global databaseType := ""
-currentDB := 0 ; current db connection
+currentDB := null ; current db connection
 
 connectionStrings := A_ScriptDir "\Test\TestDB.sqlite||Server=localhost;Port=3306;Database=test;Uid=root;Pwd=toor;|Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" A_ScriptDir "\Test\TestDB.mdb"
 
@@ -26,12 +23,15 @@ Gui, Add, ComboBox, x+0  w520 vSQL Sort, %initialSQL%||
 Gui, Add, Button, yp xp+560 w80 hp vRun gRunSQL Default, .run
 
 
-
 Gui, Add, Text, xm h20 w100 0x200, Table name:
 Gui, Add, GroupBox, xm w780 h330 , Results
 Gui, Add, ListView, xp+10 yp+18 w760 h300 vResultsLV,
 Gui, Add, Button, gTestRecordSetClick, [Test RecordSet]
-Gui, Add, Button, gTestBinaryBlobClick, [Test Binary Blob]
+Gui, Add, Button, gTestInsertClick, [Test Insert]
+Gui, Add, Button, gTestBinaryBlobClick, [Test Insert Binary Blob]
+
+
+
 Gui, Add, StatusBar,
 Gui, Show, , sqlite test oop
 
@@ -47,7 +47,6 @@ ReConnect:
 	connectionString := ddDatabaseConnection
 
 	try {
-		
 		currentDB := DBA.DataBaseFactory.OpenDataBase(databaseType, connectionString)
 		
 		if(DoTestInserts)
@@ -61,10 +60,6 @@ ReConnect:
 			}catch e
 				MsgBox,16, Error, % "Failed to create Test Data.`n`nException Detail:`n" e.What "`n"  e.Message
 			
-			try {
-				TestInsert(currentDB)
-			}catch e
-				MsgBox,16, Error, % "Test of Recordset Insert failed!`n`nException Detail:`n" e.What "`n"  e.Message
 		}
 		
 
@@ -79,13 +74,28 @@ return
 
 TestRecordSetClick:
 	Gui, submit, NoHide
-	TestRecordSet(currentDB, SQL)
+	if(IsEnsureConnection())
+	{
+		TestRecordSet(currentDB, SQL)
+	}
 return
 
 TestBinaryBlobClick:
 	Gui, submit, NoHide
-	TestBinaryBLob(currentDB)
-	
+	if(IsEnsureConnection())
+	{
+		TestBinaryBLob(currentDB)
+	}
+return
+
+TestInsertClick:
+	if(IsEnsureConnection())
+	{
+		try {
+			TestInsert(currentDB)
+		}catch e
+			MsgBox,16, Error, % "Test of Recordset Insert failed!`n`nException Detail:`n" e.What "`n"  e.Message
+	}
 return
 
 
@@ -110,7 +120,7 @@ RunSQL:
 		}
 		
 		try {
-		
+			/*
 			res := currentDB.Query(SQL)
 		
 			if(is(res, DBA.Table)){
@@ -119,6 +129,13 @@ RunSQL:
 			} else {
 				state := "Non selection Query executed! Ret: " res
 			}
+			*/
+			
+			rs := db.OpenRecordSet(SQL)
+			
+
+			
+			
 			
 		} catch e
 			state := "!# " e.What " " e.Message
@@ -131,15 +148,37 @@ RunSQL:
 	}
 return
 
-
+IsEnsureConnection( dialoge=1 ){
+	connected := (currentDB != null)
+	if(dialoge && !connected){
+		MsgBox,64, No Connection, You must connect to a DB to use this command.
+	}
+	
+	return connected
+}
 
 
 TestInsert(mydb){
 	
 	
-	records := new Collection()
 	
 	;Table Layout: Name, Fname, Phone, Room
+	
+	record := {}
+	record.Name := "Yutini"
+	record.Fname := "Wayland"
+	record.Phone := "1337"
+	record.Room := "No idea for what this is good for"
+	
+	mydb.Insert(record, "Test")
+	
+	
+	/*
+	* Test inserting multiple values
+	* this is normaly faster than calling Insert for each element individually
+	*/
+	
+	records := new Collection()
 	
 	record := {}
 	record.Name := "Hans"
@@ -161,23 +200,49 @@ TestInsert(mydb){
 
 TestBinaryBLob(db){
 	static imagePath := A_scriptdir "\Test\boom.png"
-
+	
 	if(!IsObject(db))
 		throw Exception("ArgumentExcpetion: db must be a DBA DataBase Object")
 	
 	imgBuffer := new MemoryBuffer()
 	imgBuffer.CreateFormFile(imagePath)
-	
-	;MsgBox % imgBuffer.ToString()
-	;imgBuffer.WriteToFile(A_ScriptDir "\hui.jpg")
-	
+
+	MsgBox % imgBuffer.ToBase64()
+
+
 	record := {}
-	record.Name  := "Test Image"
-	;record.Image := imgBuffer
+	record.Name  := "SuperTest"
+	record.Image := imgBuffer
 		
-	db.Insert(record, "ImageTest") ; Insert this record into Table 'ImageTest'
-	
+	db.Insert(record, "TestImage") ; Insert this record into Table 'ImageTest'
 	imgBuffer.Free()
+	
+	
+	TestReadBinaryBlobAndWriteToDisk(db)
+}
+
+
+TestReadBinaryBlobAndWriteToDisk(db){
+	static imagePath2 := A_scriptdir "\Test\boomFromDb.png"
+	
+	FileDelete, % imagePath2
+	
+	record := db.QueryRow("Select * from  TestImage WHERE Name = 'SuperTest'")
+	
+	if(IsObject(record))
+	{
+		/*
+		* All binary BLOBs are wrapped automatically into a MemoryBuffer.
+		* The record.Image is therefore an Instance of a MemoryBuffer
+		*/
+		
+		; write the binary blob data into a new file
+		record.Image.WriteToFile(imagePath2) ; write the buffer into a file - we get a valid png again :)
+		run, % imagePath2
+	}else
+		MsgBox,16, no such record, cant find 'SuperTest' in TestImage
+	
+	
 }
 
 
@@ -221,6 +286,22 @@ ShowTable(listView, table){
 	LV_ModifyCol()
 	GuiControl, +ReDraw, %listView%
 }
+
+ShowRecordSet(rs){
+	
+	while(!rs.EOF){	
+		name := rs["Name"] 
+		phone := rs["Phone"]
+
+		MsgBox %name% %phone%
+		rs.Update()
+		rs.MoveNext()
+	}
+	rs.Close()
+	
+}
+
+
 
 CreateTestDataSQLite(db){
 	

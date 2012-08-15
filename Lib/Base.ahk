@@ -64,12 +64,12 @@ IsMetaProperty(str){
 */
 class Exceptions
 {
-	NotImplemented(){
-		return Exception("A not implemented Method was called.",-1)
+	NotImplemented(name=""){
+		return Exception("A not implemented Method was called." (name != "" ? ": " name : "") ,-1)
 	}
 	
-	MustOverride(){
-		return Exception("This Method must be overriden",-1)
+	MustOverride(name=""){
+		return Exception("This Method must be overriden" (name != "" ? ": " name : "")  ,-1)
 	}
 	
 	ArgumentException(furtherInfo=""){

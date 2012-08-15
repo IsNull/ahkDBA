@@ -168,11 +168,11 @@ class DataBase
 	}
 	
 	IsValid(){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	Query(sql){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	QueryValue(sQry){
@@ -190,7 +190,7 @@ class DataBase
 	}
 	
 	OpenRecordSet(sql, editable = false){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	ToSqlLiteral(value) {
@@ -206,39 +206,39 @@ class DataBase
 	}
 	
 	EscapeString(string){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	QuoteIdentifier(identifier){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	BeginTransaction(){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	EndTransaction(){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	Rollback(){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	Insert(record, tableName){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	InsertMany(records, tableName){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	Update(fields, constraints, tableName, safe = True){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	Close(){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 }
 
@@ -251,35 +251,35 @@ class RecordSet
 	}
 	
 	AddNew(){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	MoveNext(){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	Delete(){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	Update(){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	Close(){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	getEOF(){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	IsValid(){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	getColumnNames(){
-		throw Exceptions.MustOverride()
+		throw Exceptions.MustOverride(A_ThisFunc)
 	}
 	
 	getCurrentRow(){

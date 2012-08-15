@@ -32,7 +32,7 @@ class RecordSetSqlLite extends DBA.RecordSet
 	
 	
 	MoveNext() {	
-		static SQLITE_NULL := 5
+		;static SQLITE_NULL := 5
 		static EOR := -1
 		
 		this.ErrorMsg := ""
@@ -53,13 +53,13 @@ class RecordSetSqlLite extends DBA.RecordSet
 				this._eof := true
 				return EOR
 			}
-			this.ErrorMessage := This._db.ErrMsg()
+			this.ErrorMessage := this._db.ErrMsg()
 			this.ErrorCode := rc
 			this._eof := true
 			return false
 		}
-		rc := DllCall("SQlite3\sqlite3_data_count", "UInt", this._query, "Cdecl Int")
-
+		rc := DllCall("SQlite3\sqlite3_data_count", UInt, this._query, "Cdecl Int")
+		
 		if (rc < 1) {
 			this.ErrorMsg := "RecordSet is empty!"
 			this.ErrorCode := this._db.ReturnCode("SQLITE_EMPTY")
@@ -71,11 +71,27 @@ class RecordSetSqlLite extends DBA.RecordSet
 		;_currentRow := new Row()
 		fields := new Collection()
 		Loop, %rc% {
-			ctype := DllCall("SQlite3\sqlite3_column_type", "UInt", this._query, "Int", A_Index - 1, "Cdecl Int")
-			if (ctype == SQLITE_NULL) {
-				fields[A_Index] := ""
+			ctype := DllCall("SQlite3\sqlite3_column_type", UInt, this._query, Int, A_Index - 1, "Cdecl Int")
+			
+			if (ctype == SQLiteDataType.SQLITE_NULL) {
+				
+				fields[A_Index] := DBA.DataBase.NULL ;""
+				
+			}else if(ctype == SQLiteDataType.SQLITE_BLOB){
+
+				blobSize := DllCall("SQlite3\sqlite3_column_bytes", UInt, this._query, Int, A_Index -1, "Cdecl UInt")
+				blobPtr := DllCall("SQlite3\sqlite3_column_blob", UInt, this._query, Int, A_Index - 1, "Cdecl Ptr")
+
+				if ( blobPtr )
+				{
+					memBuf := new MemoryBuffer()
+					memBuf.Create( blobPtr, blobSize )
+					fields[A_Index] := memBuf
+				}else{
+					fields[A_Index] := DBA.DataBase.NULL
+				}
 			} else {
-				strPtr := DllCall("SQlite3\sqlite3_column_text", "UInt", this._query, "Int", A_Index - 1, "Cdecl UInt")
+				strPtr := DllCall("SQlite3\sqlite3_column_text", UInt, this._query, Int, A_Index - 1, "Cdecl UInt")
 				fields[A_Index] := StrGet(strPtr, "UTF-8")
 			}
 		}
@@ -94,7 +110,7 @@ class RecordSetSqlLite extends DBA.RecordSet
 			this.ErrorMsg := "Invalid query handle!"
 			return false
 		}
-		rc := DllCall("SQlite3\sqlite3_reset", "UInt", this._query, "Cdecl Int")
+		rc := DllCall("SQlite3\sqlite3_reset", UInt, this._query, "Cdecl Int")
 
 		if (rc) {
 			this.ErrorMsg := This._db.ErrMsg()

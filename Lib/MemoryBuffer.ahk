@@ -5,8 +5,36 @@
 */
 class MemoryBuffer
 {
+	static MEM_RELEASE := 0x8000
+	static MEM_COMMIT := 0x00001000
+	static MEM_RESERVE := 0x00002000
+	static PAGE_READWRITE := 0x04
+		
 	Adress := 0
 	Size := 0
+	
+	
+	
+	
+	
+	ToBase64(){
+		static CryptBinaryToString := "Crypt32.dll\CryptBinaryToString" (A_IsUnicode ? "W" : "A")
+		static CRYPT_STRING_BASE64 := 0x00000001
+
+		num := 0
+
+		DllCall("Crypt32.dll\CryptBinaryToString"
+				, Ptr,  this.Adress
+				, Uint, this.Size
+				, Uint, CRYPT_STRING_BASE64
+				, Str, encoded
+				, Uint*, num)
+				
+		return encoded
+	}
+	
+	
+	
 	
 	/*
 	* Create a new Buffer from the existing Memory source
@@ -39,23 +67,24 @@ class MemoryBuffer
 	
 	/*
 	* Write the binary buffer to a file
+	*
+	* returns true on succes, otherwise false
 	*/
 	WriteToFile(filePath){
 		binFile := FileOpen(filePath, "rw")
-		binFile.RawWrite(this.Adress+0, this.Size)
+		bytesWritten := binFile.RawWrite(this.Adress+0, this.Size)
 		binFile.Close()
+		return (bytesWritten == this.Size) ; we expect that all bytes were written down
 	}
 	
 	/*
 	* Free this Buffer, releases the reserved memory
 	*/
 	Free(){
-		static MEM_RELEASE := 0x8000
-
 		ret := DllCall("VirtualFree"
 					,Ptr, this.Adress
 					,Int, 0
-					,Int, MEM_RELEASE)
+					,Int, this.MEM_RELEASE)
 		this.Adress := 0
 		this.Size := 0
 		
@@ -83,20 +112,14 @@ class MemoryBuffer
 	* returns the base adress of the new reserved memory
 	*/
 	AllocMemory(size){
-		static MEM_COMMIT := 0x00001000
-		static MEM_RESERVE := 0x00002000
-		static PAGE_READWRITE := 0x04
-
 		baseAdress := DllCall("VirtualAlloc"
 						, Ptr, 0
 						, Int, size
-						, UInt, MEM_COMMIT | MEM_RESERVE
-						, UInt, PAGE_READWRITE, "Ptr") ; don't allow execution in this memory
+						, UInt, this.MEM_COMMIT | this.MEM_RESERVE
+						, UInt, this.PAGE_READWRITE, "Ptr") ; don't allow execution in this memory
 		return baseAdress
 	}
-	
 
-	
 }
 
 

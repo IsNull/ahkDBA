@@ -1,7 +1,16 @@
 
-obj := {}
-obj.Buf := ""
+c := new Tte
+c.test()
+exitapp
 
-
-MsgBox % &obj["Buf"]
-ExitApp
+class Tte
+{
+	
+	DBA_T := 12
+	
+	
+	test(){
+		MsgBox % this.DBA_T
+	}
+	
+}
