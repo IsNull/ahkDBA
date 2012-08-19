@@ -10,11 +10,15 @@ global null := 0	; for better readability
 */
 is(obj, type){
 	
+	;MsgBox % "is: " typeof(obj) " =? " typeof(type)
+
 	if(IsObject(type))
 		type := typeof(type)
 	
+	if( type == "" )
+		throw Exception("ArgumentException: type is not a valid class/name!`n`tObject: " typeof(obj),-1)
+	
 	while(IsObject(obj)){
-		
 		if(obj.__Class == type){
 			return true
 		}
@@ -41,7 +45,7 @@ typeof(obj){
 		}
 		return "Object"
 	}
-	return "NonObject"
+	return "NonObject value(" obj ")"
 }
 
 inheritancePath( obj ){
@@ -49,10 +53,11 @@ inheritancePath( obj ){
 
 	if(IsObject(obj)){
 		
-		ipath := "inheritance tree:`n`n"  
+		ipath := "inheritance tree`n`n"
 		
-		while(IsObject(obj := obj.base)){
+		while(IsObject(obj )){
 			itree[A_index] := (Trim(obj.__Class) != "") ? obj.__Class : "{}"
+			obj := obj.base
 		}
 		cnt := itree.MaxIndex()
 		for i,cls in itree
@@ -81,14 +86,28 @@ IsObjectMember(obj, memberStr){
 	}
 }
 
-
-IsMetaProperty(str){
-	static metaProps := "__New,__Get,__Set,__Class"
-	if str in %metaProps%
-		return true
-	else
-		return false
+/*
+* Checks if the given property Name a reserved meta property name?
+*/
+IsMetaProperty(propertyName){
+	static metaProps := ["base","__New","__Get","__Set","__Class"]
+	return Contains(metaProps, propertyName)
 }
+
+/*
+* Returns the exception detail as formated string
+*/
+ExceptionDetail(e){
+	return "Exception Detail:`n" e.What "`n"  e.Message "`n`nin:`t" e.File "`nLine:`t" e.Line
+}
+
+Contains(list, value){
+	for each, item in list
+		if(item = value)
+			return true
+	return false
+}
+
 
 
 /**
@@ -109,8 +128,6 @@ class Exceptions
 		return Exception("A wrong Argument has been passed to this Method`n" furtherInfo,-1)
 	}
 }
-
-
 
 
 ;Base

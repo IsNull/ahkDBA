@@ -3,11 +3,9 @@
 SetWorkingDir %A_ScriptDir% 
 #Include <DBA>
 
-
-
 global initialSQL := "SELECT * FROM Test"
 global databaseType := ""
-currentDB := null ; current db connection
+global currentDB := null ; current db connection
 
 connectionStrings := A_ScriptDir "\Test\TestDB.sqlite||Server=localhost;Port=3306;Database=test;Uid=root;Pwd=toor;|Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" A_ScriptDir "\Test\TestDB.mdb"
 
@@ -28,11 +26,10 @@ Gui, Add, Button, yp xp+560 w80 hp vRun gRunSQL Default, .run
 Gui, Add, Text, xm h20 w100 0x200, Table name:
 Gui, Add, GroupBox, xm w780 h330 , Results
 Gui, Add, ListView, xp+10 yp+18 w760 h300 vResultsLV,
+
 Gui, Add, Button, gTestRecordSetClick, [Test RecordSet]
 Gui, Add, Button, gTestInsertClick, [Test Insert]
 Gui, Add, Button, gTestBinaryBlobClick, [Test Insert Binary Blob]
-
-
 
 Gui, Add, StatusBar,
 Gui, Show, , sqlite test oop
@@ -43,15 +40,13 @@ return
 
 ReConnect:
 	Gui, submit, NoHide
-	DoTestInserts := false
+	DoTestInserts := true
 	
 	databaseType := ddDatabaseType
 	connectionString := ddDatabaseConnection
 
 	try {
 		currentDB := DBA.DataBaseFactory.OpenDataBase(databaseType, connectionString)
-		
-		;MsgBox % inheritancePath(currentDB)
 		
 		if(DoTestInserts)
 		{
@@ -62,16 +57,13 @@ ReConnect:
 					CreateTestDataMySQL(currentDB)
 				}
 			}catch e
-				MsgBox,16, Error, % "Failed to create Test Data.`n`nException Detail:`n" e.What "`n"  e.Message
-			
+				MsgBox,16, Error, % "Failed to create Test Data.`n`n" ExceptionDetail(e)
 		}
-		
+	} catch e
+		MsgBox,16, Error, % "Failed to create connection. Check your Connection string and DB Settings!`n`n" ExceptionDetail(e)
 
-		GoSub, RunSQL
-	}
-	catch e
-		MsgBox,16, Error, % "Failed to create connection. Check your Connection string and DB Settings!`n`nException Detail:`n" e.What "`n"  e.Message
 
+	GoSub, RunSQL
 
 return
 
@@ -113,7 +105,11 @@ Exitapp
 ;=======================================================================================================================
 RunSQL:
 	GuiControlGet, SQL
+	RunSQL(SQL)
+return
 
+
+RunSQL(SQL){
 	if(IsObject(currentDB))
 	{
 		state := ""
@@ -124,24 +120,12 @@ RunSQL:
 		}
 		
 		try {
-			/*
-			res := currentDB.Query(SQL)
-		
-			if(is(res, DBA.Table)){
-				SB_SetText("The Selection yielded " res.Count() " results.")
-				ShowTable("ResultsLV", res)
-			} else {
-				state := "Non selection Query executed! Ret: " res
-			}
-			*/
-			
 			rs := currentDB.OpenRecordSet(SQL)
 			if(IsObject(rs))
 				ShowRecordSet("ResultsLV", rs)
-			
-			
-		} catch e
-			state := "!# " e.What " " e.Message
+		} catch e {
+			MsgBox,16, Error, % "OpenRecordSet Failed.`n`n" ExceptionDetail(e) ;state := "!# " e.What " " e.Message
+		}
 
 
 		if(state != "")
@@ -149,7 +133,7 @@ RunSQL:
 	}else {
 		MsgBox,16, Error, No Connection avaiable. Please connect to a db first!
 	}
-return
+}
 
 IsEnsureConnection( dialoge=1 ){
 	connected := (currentDB != null)
@@ -162,18 +146,16 @@ IsEnsureConnection( dialoge=1 ){
 
 
 TestInsert(mydb){
-	
-	
-	
+
 	;Table Layout: Name, Fname, Phone, Room
 	
 	record := {}
-	record.Name := "Yutini"
+	record.Name := "Yutini_" RandomChars(5)
 	record.Fname := "Wayland"
 	record.Phone := "1337"
 	record.Room := "No idea for what this is good for"
 	
-	mydb.Insert(record, "Test")
+	mydb.Insert(record, "Test") ; insert a single record into table test
 	
 	
 	/*
@@ -184,13 +166,13 @@ TestInsert(mydb){
 	records := new Collection()
 	
 	record := {}
-	record.Name := "Hans"
+	record.Name := "Hans_" RandomChars(5)
 	record.Fname := "Meier"
 	record.Phone := "93737337"
 	record.Room := "wtf is room!? :D"
 		
 	record2 := {}
-	record2.Name := "Marta"
+	record2.Name := "Marta_" RandomChars(5)
 	record2.Fname := "Heilia"
 	record2.Phone := "1234111"
 	record2.Room := "Don't be that strange!"	
@@ -199,6 +181,8 @@ TestInsert(mydb){
 	records.Add(record2)	
 	
 	mydb.InsertMany(records, "Test")
+	
+	RunSQL("SELECT * FROM Test")
 }
 
 TestBinaryBLob(db){
@@ -207,11 +191,9 @@ TestBinaryBLob(db){
 	if(!IsObject(db))
 		throw Exception("ArgumentExcpetion: db must be a DBA DataBase Object")
 	
-	imgBuffer := new MemoryBuffer()
-	imgBuffer.CreateFormFile(imagePath)
-
-	MsgBox % imgBuffer.ToBase64()
-
+	imgBuffer := MemoryBuffer.CreateFromFile(imagePath)
+	
+	MsgBox % imgBuffer.ToString()
 
 	record := {}
 	record.Name  := "SuperTest"
@@ -250,78 +232,58 @@ TestReadBinaryBlobAndWriteToDisk(db){
 
 TestRecordSet(db, sQry){
 	rs := db.OpenRecordSet(sQry)
+	
 	while(!rs.EOF){	
 		name := rs["Name"] 
 		phone := rs["Phone"]
 
-		MsgBox %name% %phone%
-		;rs.Update()
+		MsgBox, % (4 | 0x40), Showing record Nr %A_Index%,  %name% %phone%`n`n`nDo you want to display the next record?
+		IfMsgBox, No
+			break
 		rs.MoveNext()
 	}
+	
 	rs.Close()
 	MsgBox done :)
 }
 
 /*
-ShowTable(listView, table){
-	
-	GuiControl, -ReDraw, %listView%
-	Gui, ListView, %listView%
-	if(!is(table, DBA.Table))
-		throw Exception("Table Object expected!",-1)
-	
-	LV_Delete()
-	Loop, % LV_GetCount("Column")
-	   LV_DeleteCol(1)
-   
-	for each, colName in table.Columns 
-		LV_InsertCol(A_Index,"", colName)
-	
-	columnCount := table.Columns.Count()
-	
-	for each, row in table.Rows
-	{
-		rowNum := LV_Add("", "")
-		Loop, % columnCount
-			LV_Modify(rowNum, "Col" . A_index, row[A_index])
-	}
-	LV_ModifyCol()
-	GuiControl, +ReDraw, %listView%
-}
+* Show all records in the recordSet in the given ListView
 */
+ShowRecordSet( LVname, resultSet ){
+	
+	GuiControl, -ReDraw, %LVname%
+	Gui, ListView, %LVname%
 
-ShowRecordSet( listView, rs ){
-	
-	GuiControl, -ReDraw, %listView%
-	Gui, ListView, %listView%
-	
-	MsgBox % inheritancePath( rs )
-	if(!is(rs, DBA.RecordSet))
-		throw Exception("RecordSet Object expected!",-1)
+	if(!is(resultSet, DBA.RecordSet))
+		throw Exception("RecordSet Object expected! resultSet was of type: " typeof(resultSet) ,-1)
 	
 	; Delete existing data
 	LV_Delete()
 	Loop, % LV_GetCount("Column")
 	   LV_DeleteCol(1)
-	
+	   
+
 	; fetch new data
-	columns := rs.getColumnNames()
+	columns := resultSet.getColumnNames()
 	columnCount := columns.Count()
 	
 	for each, colName in columns
 		LV_InsertCol(A_Index,"", colName)
 	
 	
-	while(!rs.EOF){	
-		;name := rs["Name"] 
-		;phone := rs["Phone"]
+	while(!resultSet.EOF){	
 		rowNum := LV_Add("", "")
 		Loop, % columnCount
-			LV_Modify(rowNum, "Col" . A_index, rs[A_index])
-		rs.MoveNext()
+			LV_Modify(rowNum, "Col" . A_index, resultSet[A_index])
+		resultSet.MoveNext()
 	}
+	
 	LV_ModifyCol()
-	GuiControl, +ReDraw, %listView%
+	GuiControl, +ReDraw, %LVname%
+	
+	
+	SB_SetText("Displaying " rowNum " Rows")
 }
 
 
@@ -362,8 +324,9 @@ CreateTestDataMySQL(db){
 
 		InsertTestData(db)
 		
-	}catch{
-		;// ignore
+	}catch e{
+		; // if there where already test data
+		; // we ignore the duplicate key exception.
 	}
 }
 
@@ -387,7 +350,8 @@ InsertTestData(db)
 		if (!db.Query(sQry)) {
 			  Msg := "ErrorLevel: " . ErrorLevel . "`n" . SQLite_LastError() "`n`n" sQry
 			  FileAppend, %Msg%, sqliteTestQuery.log
-			  MsgBox, 0, Query failed, %Msg%
+			  throw Exception("Query failed: " Msg)
+			 ; MsgBox, 0, Query failed, %Msg%
 		}
 		
 
@@ -400,5 +364,15 @@ ArrayToGuiString(items , bSelectFirst){
 	str := ""
 	for each, item in items
 		str .= item "|" ((bSelectFirst && A_Index == 1) ? "|" : "")
+	return str
+}
+
+
+RandomChars(count, str=""){
+	loop % count
+	{
+		Random, asc, 0x61, 0x7A
+		str .= chr(asc)
+	}
 	return str
 }

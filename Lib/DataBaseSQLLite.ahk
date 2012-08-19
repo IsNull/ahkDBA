@@ -1,5 +1,4 @@
-﻿
-; namespace DBA
+﻿; namespace DBA
 
 class SQLite
 {
@@ -78,7 +77,20 @@ class DataBaseSQLLite extends DBA.DataBase
 		Querys the DB and returns a RecordSet
 	*/
 	OpenRecordSet(sql, editable = false){
-		return new DBA.RecordSetSqlLite(this, SQlite_Query(this._handleDB, sql))
+		
+		if( this.IsValid() )
+		{
+			rs := new DBA.RecordSetSqlLite(this, SQlite_Query(this._handleDB, sql))
+			;myliters := new DBA.RecordSetSqlLite
+			;myrs := new DBA.RecordSet
+			
+			;MsgBox % "DBA.RecordSetSqlLite params:`t" rs.TestRecordSet()
+			;MsgBox % "DBA.RecordSetSqlLite:`t"myliters.TestRecordSet()
+			;MsgBox % "DBA.RecordSet:`t" myrs.TestRecordSet()
+			
+			return rs
+		}else
+			throw Exception("NotSupportedException: There is no valid DB Connection, OpenRecordSet requires a valid connection.",-1)
 	}
 	
 	/*

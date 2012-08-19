@@ -10,6 +10,7 @@ class RecordSetADO extends DBA.RecordSet
 
 	__New(sql, adoConnection, editable = false){
 		this._adoRS := ComObjCreate("ADODB.Recordset")
+
 		if(editable)
 			this._adoRS.Open(sql, adoConnection, ADO.CursorType.adOpenKeyset, ADO.LockType.adLockOptimistic, ADO.CommandType.adCmdTable)
 		else
@@ -100,7 +101,7 @@ class RecordSetADO extends DBA.RecordSet
 		if(!IsObjectMember(this, param) && param != "_currentRow"){
 			if(this.IsValid())
 			{	
-				df := this._adoRS.Fields[param]
+				df := this._adoRS.Fields[param-1] ; ADO uses zero based indexes
 				return df.Value
 			}
 		}

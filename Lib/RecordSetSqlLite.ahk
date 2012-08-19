@@ -11,6 +11,30 @@ class RecordSetSqlLite extends DBA.RecordSet
 	_db	:= 0			; SQLiteDataBase
 	_eof := false		; bool 
 	
+	
+	
+	__New(db, query){
+		
+		if(!is(db, DBA.DataBaseSQLLite)){
+			throw Exception("ArgumentException: db must be a DataBaseSQLLite Object",-1)
+		}
+		this._db := db
+		this._query := query
+		
+		if(query != 0){
+			
+			SQLite_FetchNames(this._query, names)
+			this._colNames := new Collection(names)
+			
+			this.MoveNext() ; move to the first record
+		}
+	}
+	
+	Test(){
+		return "I'm a RecordSetSqlLite instance. For sure."
+	}
+	
+	
 	/*
 		Is this RecordSet valid?
 	*/
@@ -82,9 +106,7 @@ class RecordSetSqlLite extends DBA.RecordSet
 
 				if ( blobPtr )
 				{
-					memBuf := new MemoryBuffer()
-					memBuf.Create( blobPtr, blobSize )
-					fields[A_Index] := memBuf
+					fields[A_Index] :=  MemoryBuffer.Create( blobPtr, blobSize )
 				}else{
 					fields[A_Index] := DBA.DataBase.NULL
 				}
@@ -138,20 +160,6 @@ class RecordSetSqlLite extends DBA.RecordSet
 		return true
 	}
 	
-	__New(db, query){
-		if(!is(db, DBA.DataBaseSQLLite)){
-			throw Exception("db must be a DataBaseSQLLite Object",-1)
-		}
-		this._db := db
-		this._query := query
-		
-		if(query != 0){
-			
-			SQLite_FetchNames(this._query, names)
-			this._colNames := new Collection(names)
-			
-			this.MoveNext() ; move to the first record
-		}
-	}
+
 }
 

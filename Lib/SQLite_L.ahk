@@ -339,7 +339,7 @@ SQLite_Bind(query, idx, val, type = "auto") {
       return SQLite_bind_text(query, idx, val)
    if (type = "blob"){
       if(is(val, MemoryBuffer)){
-         MsgBox % "binding blob, adr: "  val.GetPtr() " size: " val.Size
+         ;MsgBox % "binding blob, adr: "  val.GetPtr() " size: " val.Size
          return SQLite_Bind_blob(query, idx, val.GetPtr(), val.Size) ; val is a MemoryBuffer
       }else
          throw Exception("You can only store MemorBuffers as BLOB.")
