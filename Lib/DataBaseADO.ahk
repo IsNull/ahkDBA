@@ -39,7 +39,13 @@ class DataBaseADO extends DBA.DataBase
 	* Is this connection open?
 	*/
 	IsConnected(){
-		return (IsObject(this._connection) && this._connection.State != ADO.ObjectStateEnum.adStateClosed)
+		static ObjectStateEnum_adStateClosed := 0
+		
+		if(IsObject(this._connection))
+		{
+			return  (this._connection.State != ObjectStateEnum_adStateClosed)
+		}
+		return false
 	}
 	
 	IsValid(){

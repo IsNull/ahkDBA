@@ -85,23 +85,33 @@ class RecordSetADO extends DBA.RecordSet
 	
 	Close() {
 		if(this.IsValid())
+		{
 			this._adoRS.Close()
+			this._adoRS := null
+		}
 	}
 	
 	
-	__Get(param){
+	__Get(propertyName){
 		
-		if(IsObject(param)){
+		if(IsObject(propertyName)){
 			throw Exception("Expected Index or Column Name!",-1)
 		}
 		
-		if(param = "EOF")
+		if(propertyName = "EOF")
 			return this.getEOF()
-
-		if(!IsObjectMember(this, param) && param != "_currentRow"){
+		
+		if(!IsObjectMember(this, propertyName) && propertyName != "_currentRow"){
 			if(this.IsValid())
 			{	
-				df := this._adoRS.Fields[param-1] ; ADO uses zero based indexes
+				/*
+				* Param can either be the column index
+				* Or the column name
+				*/
+				if propertyName is Integer
+					propertyName-- ; ado zero based indexes
+				
+				df := this._adoRS.Fields[propertyName] ; ADO uses zero based indexes
 				return df.Value
 			}
 		}
