@@ -15,7 +15,7 @@ Gui, Margin, 10, 10
 
 Gui, Add, Text, x10 w100 h20 0x200 , DB Connection, 
 Gui, Add, ComboBox, x+0 ym w400 vddDatabaseConnection, % connectionStrings
-Gui, Add, DropDownList, yp xp+420 w100 vddDatabaseType, % ArrayToGuiString(DBA.DataBaseFactory.AvaiableTypes, true)
+Gui, Add, DropDownList, yp xp+420 w100 vddDatabaseType, % ArrayToGuiString(DBA.DataBaseFactory.AvailableTypes, true)
 Gui, Add, Button, gReConnect yp xp+140 w80, .connect
 
 Gui, Add, Text, x10 yp+35  w100 h20 0x200 vTX, SQL statement:
@@ -135,9 +135,9 @@ RunSQL(SQL){
 	}
 }
 
-IsEnsureConnection( dialoge=1 ){
+IsEnsureConnection( dialogue=1 ){
 	connected := (currentDB != null)
-	if(dialoge && !connected){
+	if(dialogue && !connected){
 		MsgBox,64, No Connection, You must connect to a DB to use this command.
 	}
 	
@@ -189,7 +189,7 @@ TestBinaryBLob(db){
 	static imagePath := A_scriptdir "\Test\boom.png"
 	
 	if(!IsObject(db))
-		throw Exception("ArgumentExcpetion: db must be a DBA DataBase Object")
+		throw Exception("ArgumentException: db must be a DBA DataBase Object")
 	
 	imgBuffer := MemoryBuffer.CreateFromFile(imagePath)
 	
