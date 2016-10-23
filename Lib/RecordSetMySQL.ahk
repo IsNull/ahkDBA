@@ -18,7 +18,15 @@ class RecordSetMySQL extends DBA.RecordSet
 		this._query := requestResult
 		
 		if(this._query != 0){
-			this._colNames := this.getColumnNames()
+			mysqlFields := MySQL_fetch_fields(this._query)
+			colNames := new Collection()
+			i := 0
+			for each, mysqlField in mysqlFields {
+				colNames.Add(mysqlField.Name())
+				i++
+			}
+			this._colCount := i
+			this._colNames := colNames
 			this.MoveNext()
 		}
 	}
@@ -35,22 +43,12 @@ class RecordSetMySQL extends DBA.RecordSet
 		Returns an Array with all Column Names
 	*/
 	getColumnNames(){	
-		mysqlFields := MySQL_fetch_fields(this._query)
-		colNames := new Collection()
-		i := 0
-		for each, mysqlField in mysqlFields
-		{
-			colNames.Add(mysqlField.Name())
-			i++
-		}
-		this._colCount := i
-		return colNames
+		return this._colNames
 	}
 		
 	getEOF(){
 		return this._eof
 	}
-	
 	
 	MoveNext() {
 		static EOR := -1
