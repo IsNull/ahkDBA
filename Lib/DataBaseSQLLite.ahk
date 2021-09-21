@@ -166,7 +166,7 @@ class DataBaseSQLLite extends DBA.DataBase
 		{
 			if (columns.HasKey(row.name)){
 				;MsgBox,0,Error,  % "row name found: " row.name "`nTypes: " row.type  ; #DEBUG
-				types[columns[row.name]] := row.types
+				types[columns[row.name]] := row.type
 			}
 		}
 		
